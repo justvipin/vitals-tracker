@@ -32,13 +32,12 @@ The primary clinical focus is **hypertension and metabolic monitoring**, featuri
   - Standardized blood pressure classification (AHA/ACC 2017).
   - High contrast, legible typography, large touch targets (min 48×48 dp/pt), and quick-entry drawer flows.
 - **HealthLog-Aligned UI Architecture & Component Hierarchy:**
-  - The UI layout, information architecture, and visual hierarchy directly reflect the **HealthLog** interface patterns:
-    1. **Today Overview & Lead Status Sentence:** Dashboard opens with a clear headline summarizing today's vitals status and pending tasks (e.g., *"Blood pressure is within target range • 1 medication dose pending today"*).
-    2. **Today's Action Strip ("Medication Quick-Add"):** Prominent daily dose checklist on the home screen enabling one-tap intake recording (`Taken` / `Skip` / `Late`) with compliance badges.
-    3. **Metric Tiles with 7-Day Sparkline Trends:** Clean, rounded cards for each vital displaying latest value, unit, timestamp, clinical category badge, and an inline SVG mini trend line.
-    4. **Log Chooser Drawer ("What would you like to record?"):** HealthLog-aligned capture picker offering targeted quick-entry flows for **Measurement** (7 vitals), **Medication** (dose intake logging), and **Mood** (5-level score, energy state, and context tags). Context-sensitive `medTiming` remains strictly filtered to BP & Glucose.
-    5. **Multi-Range Trends View:** Deep-dive tabs (7d, 14d, 30d, 90d, All) featuring clinical reference bands (Normal, Elevated, Stage 1/2) shaded behind trend charts.
-    6. **Physician Consultation Sheet:** High-contrast, tabular clinical summary ready for A4/Letter print or PDF export.
+  - The UI layout, information architecture, and visual hierarchy directly reflect streamlined clinical and daily tracking patterns:
+    1. **Today's Action Strip ("Medication Quick-Add"):** Top-priority daily dose checklist on the home screen featuring a 1-hour pre-dose appearance window. Doses only appear 1 hour before scheduled intake (or when overdue), and automatically dismiss upon being marked as `Taken` or `Skipped` with full undo support and real-time adherence scoring.
+    2. **Metric Tiles with 7-Day Sparkline Trends:** Clean, rounded cards for each vital displaying latest value, unit, timestamp, clinical category badge, and an inline SVG mini trend line.
+    3. **Log Chooser Drawer ("What would you like to record?"):** HealthLog-aligned capture picker offering targeted quick-entry flows for **Measurement** (7 vitals), **Medication** (dose intake logging), and **Mood** (5-level score, energy state, and context tags). Context-sensitive `medTiming` remains strictly filtered to BP & Glucose.
+    4. **Multi-Range Trends View:** Deep-dive tabs (7d, 14d, 30d, 90d, All) featuring clinical reference bands (Normal, Elevated, Stage 1/2) shaded behind trend charts.
+    5. **Physician Consultation Sheet:** High-contrast, tabular clinical summary ready for A4/Letter print or PDF export.
 - **Continuous App Versioning & Rollback Protocol:**
   - The active app version must always be displayed visibly at the bottom of the page (footer).
   - Before applying changes, determine whether an update is a **Minor** or **Major** version upgrade:

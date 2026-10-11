@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Vitals Tracker v6.1</title>
+  <title>Vitals Tracker v6.2</title>
 
   <!-- PWA & Mobile Web Tags (Light Theme) -->
   <meta name="theme-color" content="#FFFFFF" />
@@ -245,10 +245,6 @@
           <p id="dash-greeting-sub" class="text-xs text-hl-textMuted font-medium">Hello, welcome back.</p>
         </div>
         <div class="flex items-center gap-1.5">
-          <button id="btn-dash-edit-profile" title="Edit Profile Details" class="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition border border-slate-200">
-            <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Profile
-          </button>
           <button id="btn-dash-add-shortcut" class="py-1.5 px-3 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition shadow-sm">
             <svg class="w-3.5 h-3.5 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add
@@ -256,43 +252,7 @@
         </div>
       </div>
 
-      <!-- HealthLog Principle 1: Today Overview & Lead Status Sentence -->
-      <div class="hl-card p-4 space-y-3 relative overflow-hidden bg-gradient-to-b from-white to-purple-50/20">
-        <div class="flex items-start justify-between">
-          <div class="space-y-1">
-            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-extrabold uppercase tracking-wider">
-              Today Overview
-            </div>
-            <h2 id="dash-lead-sentence" class="text-sm font-extrabold text-slate-900 leading-snug">
-              Blood pressure is within optimal range • 1 medication dose pending today
-            </h2>
-          </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <div id="dash-today-mood-pill" class="hidden px-2 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-extrabold border border-purple-200 flex items-center gap-1"></div>
-            <div id="dash-adherence-pill" class="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200">
-            100% Adherence
-          </div>
-          </div>
-        </div>
-
-        <!-- 3 Quick Status Indicators -->
-        <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 text-center">
-          <div class="p-2 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Morning AM</span>
-            <span id="dash-today-am-val" class="text-xs font-extrabold text-slate-800">-- / --</span>
-          </div>
-          <div class="p-2 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Evening PM</span>
-            <span id="dash-today-pm-val" class="text-xs font-extrabold text-slate-800">-- / --</span>
-          </div>
-          <div class="p-2 rounded-xl bg-slate-50 border border-slate-200">
-            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Glucose</span>
-            <span id="dash-today-gluc-val" class="text-xs font-extrabold text-slate-800">-- mg/dL</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- HealthLog Principle 2: Today's Action Strip ("Medication Quick-Add") -->
+      <!-- Action Strip: Medication Doses -->
       <div class="hl-card p-4 space-y-3 border-purple-200/80">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -304,9 +264,14 @@
               <p class="text-[10px] text-slate-400 font-medium">One-tap intake compliance logging</p>
             </div>
           </div>
-          <button id="btn-open-med-manager" class="text-[11px] font-bold text-purple-600 hover:text-purple-800 px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 transition">
-            + Manage Meds
-          </button>
+          <div class="flex items-center gap-2">
+            <div id="dash-adherence-pill" class="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200 shrink-0">
+              100% Adherence
+            </div>
+            <button id="btn-open-med-manager" class="text-[11px] font-bold text-purple-600 hover:text-purple-800 px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 transition">
+              + Manage Meds
+            </button>
+          </div>
         </div>
 
         <!-- Dynamic Daily Dose Checklist Items -->
@@ -684,7 +649,7 @@
 
   <!-- Continuous App Version Display in Footer -->
   <footer class="text-center py-2 text-[11px] font-semibold text-slate-400 no-print">
-    Vitals Tracker <span class="text-purple-600 font-extrabold">v6.1</span> • Local-First Offline Health Monitoring
+    Vitals Tracker <span class="text-purple-600 font-extrabold">v6.2</span> • Local-First Offline Health Monitoring
   </footer>
 
     <!-- ========================================== -->
@@ -2204,7 +2169,7 @@
       openProfileEditModal(activeProfileId);
     });
 
-    document.getElementById('btn-dash-edit-profile').addEventListener('click', () => {
+    document.getElementById('btn-dash-edit-profile')?.addEventListener('click', () => {
       openProfileEditModal(activeProfileId);
     });
 
@@ -2379,10 +2344,53 @@
       await renderMedicationsManagerList();
     }
 
-    // Daily Intake Checklist on Dashboard
+    // Time helpers for 1-hour pre-dose window
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      const parts = timeStr.split(':');
+      let h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      h = h ? h : 12;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    function minsToTimeStr(totalMins) {
+      const norm = ((totalMins % 1440) + 1440) % 1440;
+      const h = Math.floor(norm / 60);
+      const m = norm % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+
+    function getMedicationSlots(m) {
+      if (m.frequency === 'twice_daily') {
+        return [
+          { slot: 'morning', time: (m.timeSlots && m.timeSlots[0]) || '08:00', label: 'Morning' },
+          { slot: 'evening', time: (m.timeSlots && m.timeSlots[1]) || '20:00', label: 'Evening' }
+        ];
+      } else if (m.frequency === 'thrice_daily') {
+        return [
+          { slot: 'morning', time: (m.timeSlots && m.timeSlots[0]) || '08:00', label: 'Morning' },
+          { slot: 'afternoon', time: (m.timeSlots && m.timeSlots[1]) || '14:00', label: 'Afternoon' },
+          { slot: 'evening', time: (m.timeSlots && m.timeSlots[2]) || '20:00', label: 'Evening' }
+        ];
+      } else if (m.frequency === 'evening') {
+        return [
+          { slot: 'evening', time: (m.timeSlots && m.timeSlots[0]) || '20:00', label: 'Evening' }
+        ];
+      } else {
+        return [
+          { slot: 'morning', time: (m.timeSlots && m.timeSlots[0]) || '08:00', label: 'Morning' }
+        ];
+      }
+    }
+
+    // Daily Intake Checklist on Dashboard with 1-hour pre-dose appearance window
     async function renderDashboardMedicationsChecklist() {
       const meds = await dbGetMedications(activeProfileId);
       const container = document.getElementById('medication-daily-checklist');
+      if (!container) return;
       const todayStr = new Date().toISOString().slice(0, 10);
       const intakes = await dbGetIntakes(activeProfileId, todayStr);
 
@@ -2392,73 +2400,217 @@
             No medications configured. Tap <strong>+ Manage Meds</strong> to add.
           </div>
         `;
-        document.getElementById('dash-adherence-pill').textContent = '100% Adherence';
+        const pill = document.getElementById('dash-adherence-pill');
+        if (pill) pill.textContent = '100% Adherence';
         return;
       }
+
+      const now = new Date();
+      const curMinutes = now.getHours() * 60 + now.getMinutes();
 
       let totalExpectedDoses = 0;
       let totalTakenDoses = 0;
 
-      container.innerHTML = meds.map(m => {
-        // Expand doses per slot
-        const slots = m.frequency === 'twice_daily' ? ['morning', 'evening'] : [m.frequency === 'evening' ? 'evening' : 'morning'];
-        
-        return slots.map(slot => {
+      const activePendingDoses = [];
+      const upcomingLaterDoses = [];
+      const completedDoses = [];
+
+      meds.forEach(m => {
+        const slots = getMedicationSlots(m);
+        slots.forEach(s => {
           totalExpectedDoses++;
-          const intakeId = `intake-${todayStr}-${m.id}-${slot}`;
-          const logged = intakes.find(i => i.id === intakeId);
+          // Match intake by medication ID and slot
+          const logged = intakes.find(i => i.medicationId === m.id && i.slot === s.slot);
           const isTaken = logged && logged.status === 'taken';
           const isSkipped = logged && logged.status === 'skipped';
           if (isTaken) totalTakenDoses++;
 
-          const slotLabel = slot === 'morning' ? 'Morning • 08:00 AM' : 'Evening • 08:00 PM';
+          const [sH, sM] = s.time.split(':').map(Number);
+          const schedMinutes = sH * 60 + sM;
+          const appearMinutes = schedMinutes - 60; // Doses appear 1 hour before scheduled time
+
+          if (isTaken || isSkipped) {
+            // Acted upon: goes away from the active checklist
+            completedDoses.push({
+              med: m,
+              slot: s.slot,
+              time: s.time,
+              label: s.label,
+              status: logged.status,
+              timestamp: logged.timestamp,
+              intakeId: logged.id || `intake-${todayStr}-${m.id}-${s.slot}`
+            });
+          } else if (curMinutes < appearMinutes) {
+            // More than 1 hour before scheduled intake: do NOT appear yet
+            upcomingLaterDoses.push({
+              med: m,
+              slot: s.slot,
+              time: s.time,
+              label: s.label,
+              schedMinutes,
+              appearMinutes
+            });
+          } else {
+            // Within 1-hour window or past due today, awaiting action
+            activePendingDoses.push({
+              med: m,
+              slot: s.slot,
+              time: s.time,
+              label: s.label,
+              schedMinutes,
+              appearMinutes,
+              isDue: curMinutes >= schedMinutes
+            });
+          }
+        });
+      });
+
+      // Sort chronological
+      activePendingDoses.sort((a, b) => a.schedMinutes - b.schedMinutes);
+      upcomingLaterDoses.sort((a, b) => a.schedMinutes - b.schedMinutes);
+
+      let html = '';
+
+      if (activePendingDoses.length > 0) {
+        // Show active pending dose cards with Take & Skip buttons
+        html += activePendingDoses.map(item => {
+          const timeFormatted = formatTime12h(item.time);
+          const statusBadge = item.isDue
+            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">Due now (${timeFormatted})</span>`
+            : `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-700">Upcoming (${timeFormatted})</span>`;
 
           return `
-            <div class="p-3 rounded-xl ${isTaken ? 'bg-emerald-50/70 border border-emerald-200' : isSkipped ? 'bg-slate-100 border border-slate-200' : 'bg-slate-50 border border-slate-200'} flex items-center justify-between transition">
-              <div>
-                <div class="font-extrabold text-xs text-slate-900 flex items-center gap-1.5">
-                  ${m.name} <span class="font-bold text-slate-500">${m.dosage}</span>
-                  ${isTaken ? '<span class="text-emerald-600 text-xs font-black">✓</span>' : ''}
+            <div class="p-3.5 rounded-2xl bg-white border border-purple-200/90 shadow-xs flex items-center justify-between transition hover:shadow-sm">
+              <div class="space-y-0.5">
+                <div class="font-black text-xs text-slate-900 flex items-center gap-1.5 flex-wrap">
+                  ${item.med.name} <span class="font-bold text-slate-500">${item.med.dosage}</span>
+                  ${statusBadge}
                 </div>
-                <div class="text-[10px] text-slate-400 font-medium">${slotLabel} ${m.instructions ? '• ' + m.instructions : ''}</div>
+                <div class="text-[10px] text-slate-400 font-medium">
+                  ${item.label} • Scheduled ${timeFormatted} ${item.med.instructions ? '• ' + item.med.instructions : ''}
+                </div>
               </div>
-              <div class="flex items-center gap-1.5">
-                <button onclick="toggleMedIntake('${m.id}', '${slot}', 'taken')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${isTaken ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200'}">
-                  ${isTaken ? 'Taken ✓' : 'Take'}
+              <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                <button onclick="toggleMedIntake('${item.med.id}', '${item.slot}', 'taken')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs active:scale-95 transition">
+                  Take
                 </button>
-                <button onclick="toggleMedIntake('${m.id}', '${slot}', 'skipped')" class="px-2 py-1 rounded-lg text-xs font-bold transition ${isSkipped ? 'bg-slate-700 text-white' : 'bg-white hover:bg-slate-200 text-slate-500 border border-slate-200'}">
+                <button onclick="toggleMedIntake('${item.med.id}', '${item.slot}', 'skipped')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 active:scale-95 transition">
                   Skip
                 </button>
               </div>
             </div>
           `;
         }).join('');
-      }).join('');
+      } else {
+        // No active pending doses right now
+        if (upcomingLaterDoses.length > 0) {
+          const nextDose = upcomingLaterDoses[0];
+          const nextTime = formatTime12h(nextDose.time);
+          const appearTime = formatTime12h(minsToTimeStr(nextDose.appearMinutes));
+          html += `
+            <div class="p-3.5 rounded-2xl bg-purple-50/60 border border-purple-100 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shrink-0">
+                  ⏰
+                </div>
+                <div>
+                  <div class="font-black text-xs text-slate-800">
+                    Next: ${nextDose.med.name} ${nextDose.med.dosage}
+                  </div>
+                  <div class="text-[10px] text-slate-500 font-medium">
+                    Scheduled for ${nextTime} • Will appear 1 hr prior at ${appearTime}
+                  </div>
+                </div>
+              </div>
+              <span class="text-[10px] font-extrabold text-purple-700 bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs shrink-0">
+                Upcoming
+              </span>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm shrink-0">
+                  ✓
+                </div>
+                <div>
+                  <div class="font-black text-xs text-emerald-900">
+                    All Scheduled Doses Completed For Today!
+                  </div>
+                  <div class="text-[10px] text-emerald-700 font-medium">
+                    No pending medicines right now. Next doses will appear 1 hr before their scheduled time.
+                  </div>
+                </div>
+              </div>
+              <span class="text-[10px] font-extrabold text-emerald-800 bg-white px-2 py-1 rounded-lg border border-emerald-200 shadow-2xs shrink-0">
+                All Done
+              </span>
+            </div>
+          `;
+        }
+      }
+
+      // Collapsible section for completed/skipped doses today
+      if (completedDoses.length > 0) {
+        html += `
+          <div class="pt-2 border-t border-slate-100">
+            <details class="group text-xs">
+              <summary class="flex items-center justify-between cursor-pointer list-none py-1 text-slate-500 hover:text-slate-800 font-bold select-none text-[11px]">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full ${completedDoses.some(d => d.status === 'taken') ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+                  Logged Today (${completedDoses.length})
+                </span>
+                <span class="text-[10px] text-purple-600 font-semibold group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="space-y-1.5 pt-2">
+                ${completedDoses.map(d => `
+                  <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
+                    <div>
+                      <span class="font-extrabold text-slate-800">${d.med.name} ${d.med.dosage}</span>
+                      <span class="text-[10px] text-slate-400 font-medium ml-1">(${d.label} • ${formatTime12h(d.time)})</span>
+                      <span class="ml-1 text-[10px] font-black ${d.status === 'taken' ? 'text-emerald-600' : 'text-slate-500'}">
+                        • ${d.status === 'taken' ? 'Taken ✓' : 'Skipped'}
+                      </span>
+                    </div>
+                    <button onclick="undoMedIntake('${d.intakeId}')" title="Undo this dose record" class="text-[10px] font-extrabold text-purple-600 hover:text-purple-800 px-2 py-0.5 rounded-md hover:bg-purple-50 transition border border-purple-200">
+                      Undo
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            </details>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
 
       // Adherence rate calculation
       const adherenceRate = totalExpectedDoses > 0 ? Math.round((totalTakenDoses / totalExpectedDoses) * 100) : 100;
       const pill = document.getElementById('dash-adherence-pill');
-      pill.textContent = `${adherenceRate}% Adherence`;
-      if (adherenceRate >= 80) pill.className = 'px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200 shrink-0';
-      else if (adherenceRate >= 50) pill.className = 'px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-extrabold border border-amber-200 shrink-0';
-      else pill.className = 'px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 text-xs font-extrabold border border-rose-200 shrink-0';
+      if (pill) {
+        pill.textContent = `${adherenceRate}% Adherence`;
+        if (adherenceRate >= 80) pill.className = 'px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200 shrink-0';
+        else if (adherenceRate >= 50) pill.className = 'px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-extrabold border border-amber-200 shrink-0';
+        else pill.className = 'px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 text-xs font-extrabold border border-rose-200 shrink-0';
+      }
     }
 
     async function toggleMedIntake(medId, slot, statusToSet) {
       const todayStr = new Date().toISOString().slice(0, 10);
-      const intakeId = `intake-${todayStr}-${medId}-${slot}`;
       const intakes = await dbGetIntakes(activeProfileId, todayStr);
-      const existing = intakes.find(i => i.id === intakeId);
+      const existing = intakes.find(i => i.medicationId === medId && i.slot === slot);
 
       if (existing && existing.status === statusToSet) {
         // Toggle off
         const db = await initDB();
         const tx = db.transaction([STORE_INTAKES], 'readwrite');
-        tx.objectStore(STORE_INTAKES).delete(intakeId);
+        tx.objectStore(STORE_INTAKES).delete(existing.id);
         await new Promise(res => { tx.oncomplete = res; });
-        showToast('Dose status reset');
+        showToast('Dose record removed');
       } else {
-        // Set status
+        const intakeId = existing ? existing.id : `intake-${todayStr}-${medId}-${slot}`;
         await dbPutIntake({
           id: intakeId,
           profileId: Number(activeProfileId),
@@ -2473,6 +2625,22 @@
 
       await renderDashboardMedicationsChecklist();
     }
+
+    async function undoMedIntake(intakeId) {
+      const db = await initDB();
+      const tx = db.transaction([STORE_INTAKES], 'readwrite');
+      tx.objectStore(STORE_INTAKES).delete(intakeId);
+      await new Promise(res => { tx.oncomplete = res; });
+      showToast('Dose intake restored');
+      await renderDashboardMedicationsChecklist();
+    }
+
+    // Auto-refresh medication schedule every 30 seconds so time window triggers automatically
+    setInterval(() => {
+      if (activeProfileId && !document.hidden) {
+        renderDashboardMedicationsChecklist();
+      }
+    }, 30000);
   </script>
 
   <script>
@@ -2518,7 +2686,8 @@
           leadText = `Today's BP is ${latestBP.systolic}/${latestBP.diastolic} mmHg (${cat.stage}). Keep up daily tracking.`;
         }
       }
-      document.getElementById('dash-lead-sentence').textContent = leadText;
+      const leadEl = document.getElementById('dash-lead-sentence');
+      if (leadEl) leadEl.textContent = leadText;
 
       // 2. Today AM/PM Quick Snapshot
       const todayAM = todayVitals.find(v => {
@@ -2531,9 +2700,12 @@
       });
       const todayGluc = todayVitals.find(v => v.glucose != null);
 
-      document.getElementById('dash-today-am-val').textContent = todayAM ? `${todayAM.systolic}/${todayAM.diastolic}` : '-- / --';
-      document.getElementById('dash-today-pm-val').textContent = todayPM ? `${todayPM.systolic}/${todayPM.diastolic}` : '-- / --';
-      document.getElementById('dash-today-gluc-val').textContent = todayGluc ? `${todayGluc.glucose} mg/dL` : '-- mg/dL';
+      const amEl = document.getElementById('dash-today-am-val');
+      if (amEl) amEl.textContent = todayAM ? `${todayAM.systolic}/${todayAM.diastolic}` : '-- / --';
+      const pmEl = document.getElementById('dash-today-pm-val');
+      if (pmEl) pmEl.textContent = todayPM ? `${todayPM.systolic}/${todayPM.diastolic}` : '-- / --';
+      const glucEl = document.getElementById('dash-today-gluc-val');
+      if (glucEl) glucEl.textContent = todayGluc ? `${todayGluc.glucose} mg/dL` : '-- mg/dL';
 
       // 3. 7-Day AM/PM Window & Morning Surge Differential
       const cutoff7d = new Date(Date.now() - 7 * 24 * 3600 * 1000);
@@ -2741,11 +2913,13 @@
 
       // Update Today Overview Mood Pill
       const todayMoodPill = document.getElementById('dash-today-mood-pill');
-      if (latestMood && new Date(latestMood.timestamp).toDateString() === new Date().toDateString()) {
-        todayMoodPill.innerHTML = `<span>${MOOD_EMOJIS[latestMood.score] || '🙂'}</span> <span>${latestMood.label}</span>`;
-        todayMoodPill.classList.remove('hidden');
-      } else {
-        todayMoodPill.classList.add('hidden');
+      if (todayMoodPill) {
+        if (latestMood && new Date(latestMood.timestamp).toDateString() === new Date().toDateString()) {
+          todayMoodPill.innerHTML = `<span>${MOOD_EMOJIS[latestMood.score] || '🙂'}</span> <span>${latestMood.label}</span>`;
+          todayMoodPill.classList.remove('hidden');
+        } else {
+          todayMoodPill.classList.add('hidden');
+        }
       }
 
       if (latestMood) {
@@ -3228,7 +3402,7 @@
       }
       const backup = {
         app: "Vitals Tracker",
-        version: "6.1",
+        version: "6.2",
         exportDate: new Date().toISOString(),
         profiles: allProfiles,
         vitals: allVitals,
@@ -3239,9 +3413,9 @@
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `vitals_tracker_backup_v6.1_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `vitals_tracker_backup_v6.2_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
-      showToast('JSON Backup (v6.0) downloaded');
+      showToast('JSON Backup (v6.2) downloaded');
     });
 
     document.getElementById('input-restore-json').addEventListener('change', (e) => {
@@ -3260,15 +3434,15 @@
             if (data.medicationIntakes) data.medicationIntakes.forEach(i => tx.objectStore(STORE_INTAKES).put(i));
             
             tx.oncomplete = async () => {
-              if (backup.moods && Array.isArray(backup.moods)) {
-              const tx = db.transaction([STORE_MOODS], 'readwrite');
-              const os = tx.objectStore(STORE_MOODS);
-              backup.moods.forEach(m => {
-                delete m.id;
-                os.add(m);
-              });
-            }
-            showToast('Backup restored successfully!');
+              if (data.moods && Array.isArray(data.moods)) {
+                const txMood = db.transaction([STORE_MOODS], 'readwrite');
+                const os = txMood.objectStore(STORE_MOODS);
+                data.moods.forEach(m => {
+                  delete m.id;
+                  os.add(m);
+                });
+              }
+              showToast('Backup restored successfully!');
               profiles = await dbGetProfiles();
               if (profiles.length) {
                 activeProfileId = profiles[0].id;
