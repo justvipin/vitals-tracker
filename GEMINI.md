@@ -51,6 +51,7 @@ The primary clinical focus is **hypertension and metabolic monitoring**, featuri
        ```
     3. **IndexedDB Invariance & Additive Migrations:** All database upgrades must be strictly non-destructive and backward-compatible. Adding new stores (e.g., `medications`, `medication_intakes`) must never drop or alter legacy stores (`profiles`, `vitals`). If the UI is rolled back to an earlier release, the older version continues functioning seamlessly without data loss.
     4. **Data Backup Snapshots:** The user can export and restore full JSON backups at any time through the built-in backup utility.
+    5. **GitHub Remote & Online Synchronization:** Every released version is pushed to the GitHub remote (`origin main` at `https://github.com/justvipin/vitals-tracker`) along with all version tags (`git push origin main --tags`). `index.html` is kept strictly synchronized with `vitals_tracker_light_pwa.html` to ensure GitHub Pages serves the latest production build online.
 
 ---
 
