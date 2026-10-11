@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Vitals Tracker</title>
+
+  <!-- PWA & Mobile Web Tags (Light Theme) -->
+  <meta name="theme-color" content="#FFFFFF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Vitals Tracker" />
+  <meta name="description" content="Clean offline health vitals & hypertension tracker with profile management." />
+
+  <!-- Inline Web App Manifest with Data URI Icons for seamless standalone PWA install -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Vitals%20Tracker%22%2C%22short_name%22%3A%22Vitals%20Tracker%22%2C%22start_url%22%3A%22.%2F%22%2C%22scope%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FFFFFF%22%2C%22theme_color%22%3A%22%23FFFFFF%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20192%20192%27%253E%253Crect%20width%3D%27192%27%20height%3D%27192%27%20rx%3D%2740%27%20fill%3D%27%23F3E8FF%27%2F%253E%253Cpath%20d%3D%27M36%2096h28l16-36%2024%2072%2020-48%2016%2020h20%27%20stroke%3D%27%239061F9%27%20stroke-width%3D%2714%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20fill%3D%27none%27%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%2C%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%253E%253Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27110%27%20fill%3D%27%23F3E8FF%27%2F%253E%253Cpath%20d%3D%27M96%20256h72l44-96%2064%20192%2054-128%2042%2054h54%27%20stroke%3D%27%239061F9%27%20stroke-width%3D%2736%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20fill%3D%27none%27%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            hl: {
+              bg: '#FFFFFF',
+              card: '#F8FAFC',
+              border: '#E2E8F0',
+              lilac: '#B18AFF',
+              lilacHover: '#9F75FF',
+              lilacText: '#7E22CE',
+              lilacBg: '#F3E8FF',
+              neonGreen: '#10B981',
+              cyan: '#0284C7',
+              pink: '#E11D48',
+              slateInput: '#F1F5F9',
+              textMain: '#0F172A',
+              textMuted: '#64748B'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #FFFFFF;
+      color: #0F172A;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+      overscroll-behavior-y: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    .pb-safe-dock {
+      padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 5.5rem);
+    }
+    .pt-safe-top {
+      padding-top: max(env(safe-area-inset-top, 0px), 12px);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .hl-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 24px;
+      box-shadow: 0 1px 8px rgba(15, 23, 42, 0.04);
+    }
+    .hl-metric-card {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 20px;
+    }
+
+    /* Modal / Bottom Drawer Animation */
+    .drawer-transition {
+      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease;
+    }
+    .drawer-hidden {
+      transform: translateY(100%);
+      pointer-events: none;
+    }
+    .drawer-visible {
+      transform: translateY(0%);
+    }
+
+    /* Range Pill Active Style */
+    .range-pill-active {
+      background-color: #B18AFF !important;
+      color: #FFFFFF !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 6px rgba(177, 138, 255, 0.4);
+    }
+
+    /* Screenshot 92622 styled inputs */
+    .hl-form-input {
+      width: 100%;
+      background-color: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 500;
+      color: #0F172A;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .hl-form-input:focus {
+      background-color: #FFFFFF;
+      border-color: #B18AFF;
+      box-shadow: 0 0 0 3px rgba(177, 138, 255, 0.15);
+    }
+    .hl-form-input::placeholder {
+      color: #94A3B8;
+      font-weight: 400;
+    }
+
+    @media print {
+      body * { visibility: hidden !important; }
+      #printable-doctor-summary, #printable-doctor-summary * { visibility: visible !important; }
+      #printable-doctor-summary {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #FFFFFF !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-white text-hl-textMain min-h-screen flex flex-col select-none antialiased">
+
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-hl-border px-4 py-3 pt-safe-top">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6.5 1.5-3.5h6.28"/>
+          </svg>
+        </div>
+        <span class="text-lg font-black tracking-tight text-slate-900">Vitals Tracker</span>
+      </div>
+
+      <!-- Profile Avatar & Selector -->
+      <div class="relative">
+        <div class="flex items-center gap-1.5">
+          <button id="btn-profile-toggle" class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 active:border-purple-400 transition">
+            <div id="header-avatar" class="w-6 h-6 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center uppercase shadow-sm">
+              D
+            </div>
+            <span id="header-profile-name" class="text-xs font-bold text-slate-700 max-w-[85px] truncate">Demo</span>
+            <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          
+          <!-- Direct Quick Edit Icon for Active Profile -->
+          <button id="btn-quick-edit-active-profile" title="Edit current profile" class="p-1.5 rounded-full bg-purple-50 text-purple-600 border border-purple-200 hover:bg-purple-100 transition active:scale-95">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+
+        <!-- Profile Dropdown Menu -->
+        <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-50">
+          <div class="flex items-center justify-between text-[10px] uppercase tracking-wider font-extrabold text-slate-400 px-3 py-1">
+            <span>Profiles</span>
+            <span>Actions</span>
+          </div>
+          <div id="profile-list" class="space-y-1 mb-2 max-h-56 overflow-y-auto"></div>
+          <button id="btn-open-add-profile" class="w-full py-2 px-3 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold flex items-center justify-center gap-1.5 border border-purple-200 transition">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Profile
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-md w-full mx-auto px-4 pt-3 pb-safe-dock">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="space-y-4">
+      <div class="flex items-center justify-between pt-1">
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+            Dashboard
+            <span class="text-purple-500 text-sm">✦</span>
+          </h1>
+          <p id="dash-greeting-sub" class="text-xs text-hl-textMuted">Hello, welcome back.</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button id="btn-dash-edit-profile" title="Edit Profile Details" class="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition border border-slate-200 shadow-xs">
+            <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit Info
+          </button>
+          <button id="btn-dash-add-shortcut" class="py-1.5 px-3 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition shadow-sm">
+            <svg class="w-3.5 h-3.5 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Health Score Hero Card -->
+      <div class="hl-card p-5 space-y-4 relative overflow-hidden bg-gradient-to-b from-white to-slate-50/50">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">Good morning.</h2>
+          <p id="dash-clinical-banner" class="text-xs text-hl-textMuted mt-1 leading-relaxed">
+            Your blood pressure is sitting in the optimal band. Regular home checks keep your cardiovascular health on track.
+          </p>
+        </div>
+
+        <div class="flex flex-col items-center justify-center py-2">
+          <div class="relative w-36 h-36 flex items-center justify-center">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" stroke="#F1F5F9" stroke-width="10" fill="none" />
+              <circle id="score-ring-circle" cx="60" cy="60" r="50" stroke="#10B981" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="314" stroke-dashoffset="25" class="transition-all duration-1000 ease-out" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span id="score-ring-number" class="text-4xl font-black tracking-tight text-slate-900 leading-none">94</span>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-1">Health Score</span>
+            </div>
+          </div>
+        </div>
+
+        <p id="score-sub-note" class="text-xs text-center text-hl-textMuted font-medium">
+          Nothing needs your immediate attention today.
+        </p>
+      </div>
+
+      <!-- 7-Day AM/PM Blood Pressure Summary Tiles -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="hl-metric-card p-3.5 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold tracking-wider uppercase text-slate-500">7D AM Window</span>
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          </div>
+          <div id="dash-7d-am-val" class="text-xl font-black text-slate-900">-- / --</div>
+          <div id="dash-7d-am-sub" class="text-[10px] text-slate-500 font-medium">Trough before meds</div>
+        </div>
+
+        <div class="hl-metric-card p-3.5 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold tracking-wider uppercase text-slate-500">7D PM Window</span>
+            <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+          </div>
+          <div id="dash-7d-pm-val" class="text-xl font-black text-slate-900">-- / --</div>
+          <div id="dash-7d-pm-sub" class="text-[10px] text-slate-500 font-medium">Evening check</div>
+        </div>
+      </div>
+
+      <!-- Metric Cards Vertical Stack -->
+      <div class="space-y-2.5" id="dash-metrics-container"></div>
+    </section>
+
+    <!-- TAB 2: TRENDS & CHARTS -->
+    <section id="tab-trends" class="hidden space-y-4">
+      <div class="flex items-center justify-between pt-1">
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900">Trends</h1>
+          <p class="text-xs text-hl-textMuted">Live telemetry from logged records</p>
+        </div>
+        <div class="p-2 rounded-xl bg-purple-50 border border-purple-200 text-purple-600">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+      </div>
+
+      <!-- BP Chart Card -->
+      <div class="hl-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Blood Pressure</h3>
+            <span class="text-[10px] text-slate-400 font-medium">Systolic & Diastolic mmHg</span>
+          </div>
+          <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+            <button class="trend-bp-btn px-2.5 py-1 rounded-lg text-slate-600 transition" data-range="7">7d</button>
+            <button class="trend-bp-btn px-2.5 py-1 rounded-lg text-slate-600 transition" data-range="30">30d</button>
+            <button class="trend-bp-btn px-2.5 py-1 rounded-lg text-slate-600 transition" data-range="90">90d</button>
+            <button class="trend-bp-btn px-2.5 py-1 rounded-lg range-pill-active transition" data-range="all">All</button>
+          </div>
+        </div>
+        <div id="chart-bp-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+        <div id="bp-stats-card" class="p-3 rounded-xl bg-purple-50/50 border border-purple-100 space-y-1.5 text-xs">
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span id="bp-stat-summary">Range Summary</span>
+            <span id="bp-stat-target-badge" class="text-emerald-600 font-bold">--% In Target</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-1.5 font-bold text-slate-700">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Systolic Avg
+            </span>
+            <span id="bp-stat-sys-avg" class="font-extrabold text-slate-900">-- mmHg</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-1.5 font-bold text-slate-700">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Diastolic Avg
+            </span>
+            <span id="bp-stat-dia-avg" class="font-extrabold text-slate-900">-- mmHg</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Glucose Chart Card -->
+      <div class="hl-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Blood Glucose</h3>
+            <span class="text-[10px] text-slate-400 font-medium">Fasting & Post-Meal mg/dL</span>
+          </div>
+          <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+            <button class="trend-gluc-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="7">7d</button>
+            <button class="trend-gluc-btn px-2.5 py-1 rounded-lg range-pill-active" data-range="30">30d</button>
+            <button class="trend-gluc-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="90">90d</button>
+            <button class="trend-gluc-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="all">All</button>
+          </div>
+        </div>
+        <div id="chart-gluc-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+        <div id="gluc-stats-card" class="p-2.5 rounded-xl bg-teal-50/50 border border-teal-100 flex items-center justify-between text-xs">
+          <span class="text-teal-900 font-bold">Average Glycemia:</span>
+          <span id="gluc-stat-avg" class="font-black text-teal-700">-- mg/dL</span>
+        </div>
+      </div>
+
+      <!-- Weight Chart Card -->
+      <div class="hl-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Weight & Baseline</h3>
+            <span class="text-[10px] text-slate-400 font-medium">Metric kg</span>
+          </div>
+          <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+            <button class="trend-weight-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="7">7d</button>
+            <button class="trend-weight-btn px-2.5 py-1 rounded-lg range-pill-active" data-range="30">30d</button>
+            <button class="trend-weight-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="90">90d</button>
+            <button class="trend-weight-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="all">All</button>
+          </div>
+        </div>
+        <div id="chart-weight-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+        <div id="weight-stats-card" class="p-2.5 rounded-xl bg-purple-50/50 border border-purple-100 flex items-center justify-between text-xs">
+          <span class="text-purple-900 font-bold">Weight Delta:</span>
+          <span id="weight-stat-delta" class="font-black text-purple-700">-- kg</span>
+        </div>
+      </div>
+
+      <!-- Pulse Chart Card -->
+      <div class="hl-card p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Resting Pulse</h3>
+            <span class="text-[10px] text-slate-400 font-medium">Cardiac bpm</span>
+          </div>
+          <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+            <button class="trend-pulse-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="7">7d</button>
+            <button class="trend-pulse-btn px-2.5 py-1 rounded-lg range-pill-active" data-range="30">30d</button>
+            <button class="trend-pulse-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="90">90d</button>
+            <button class="trend-pulse-btn px-2.5 py-1 rounded-lg text-slate-600" data-range="all">All</button>
+          </div>
+        </div>
+        <div id="chart-pulse-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: HISTORY -->
+    <section id="tab-history" class="hidden space-y-3">
+      <div class="flex items-center justify-between pt-1">
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900">History</h1>
+          <p class="text-xs text-hl-textMuted">Chronological journal</p>
+        </div>
+        <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+          <button class="hist-filter px-3 py-1 rounded-lg range-pill-active" data-f="all">All</button>
+          <button class="hist-filter px-3 py-1 rounded-lg text-slate-600" data-f="bp">BP</button>
+          <button class="hist-filter px-3 py-1 rounded-lg text-slate-600" data-f="glucose">Sugar</button>
+        </div>
+      </div>
+      <div id="history-feed" class="space-y-2.5 pt-1"></div>
+    </section>
+
+    <!-- TAB 4: DOCTOR CONSULTATION & BACKUP -->
+    <section id="tab-doctor" class="hidden space-y-4 pb-20">
+      <div id="printable-doctor-summary" class="hl-card p-4 space-y-4">
+        <div class="flex items-start justify-between border-b border-slate-200 pb-3">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200 uppercase tracking-wider mb-1">
+              Vitals Tracker • Physician Summary
+            </div>
+            <div class="flex items-center gap-2">
+              <h2 id="doc-patient-name" class="text-lg font-black text-slate-900">Patient: Demo</h2>
+              <button id="btn-doc-edit-profile" class="text-xs font-bold text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-md border border-purple-200 transition">
+                ✎ Edit Info
+              </button>
+            </div>
+            <p id="doc-patient-condition" class="text-xs text-hl-textMuted">Hypertension • Telmikind 40</p>
+            <p id="doc-patient-target-note" class="text-[11px] font-bold text-slate-700 mt-0.5">Clinical BP Target: &lt; 130/80 mmHg</p>
+          </div>
+          <button onclick="window.print()" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition active:scale-95 shadow-sm">
+            <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+            Print / PDF
+          </button>
+        </div>
+
+        <!-- 7-Day BP Window -->
+        <div class="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+              7-Day Blood Pressure Window
+            </span>
+            <span id="doc-7d-overall" class="text-xs font-black px-2 py-0.5 rounded-md bg-amber-200/80 text-amber-900 border border-amber-300">Overall: --/--</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-center text-xs pt-1">
+            <div class="p-2.5 rounded-xl bg-white border border-amber-100 shadow-sm">
+              <span class="text-[10px] font-extrabold uppercase text-amber-700 block">7D AM (Trough Before Meds)</span>
+              <span id="doc-7d-am-avg" class="text-lg font-black text-slate-900">--/--</span>
+              <span id="doc-7d-am-cnt" class="text-[10px] text-slate-400 block">0 tests</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-white border border-amber-100 shadow-sm">
+              <span class="text-[10px] font-extrabold uppercase text-purple-700 block">7D PM (Evening Check)</span>
+              <span id="doc-7d-pm-avg" class="text-lg font-black text-slate-900">--/--</span>
+              <span id="doc-7d-pm-cnt" class="text-[10px] text-slate-400 block">0 tests</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 30-Day BP Window -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">30-Day Extended BP Control</span>
+            <span id="doc-30d-overall" class="text-xs font-black px-2 py-0.5 rounded-md bg-slate-200 text-slate-800">Overall: --/--</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-center text-xs pt-1">
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200 shadow-sm">
+              <span class="text-[10px] font-bold text-slate-500 uppercase block">30D AM Avg</span>
+              <span id="doc-30d-am-avg" class="text-lg font-black text-slate-900">--/--</span>
+              <span id="doc-30d-am-cnt" class="text-[10px] text-slate-400 block">0 tests</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200 shadow-sm">
+              <span class="text-[10px] font-bold text-slate-500 uppercase block">30D PM Avg</span>
+              <span id="doc-30d-pm-avg" class="text-lg font-black text-slate-900">--/--</span>
+              <span id="doc-30d-pm-cnt" class="text-[10px] text-slate-400 block">0 tests</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fasting & Post-Meal Glucose Tile -->
+        <div class="p-3.5 rounded-2xl bg-teal-50/50 border border-teal-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+              Blood Glucose Glycemic Control
+            </span>
+            <span class="text-[10px] font-bold text-teal-700">mg/dL</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-center text-xs pt-1">
+            <div class="p-2.5 rounded-xl bg-white border border-teal-100 shadow-sm">
+              <span class="text-[10px] font-extrabold uppercase text-teal-700 block">30D Fasting (AM)</span>
+              <span id="doc-gluc-fast-val" class="text-lg font-black text-slate-900">--</span>
+              <span id="doc-gluc-fast-cnt" class="text-[10px] text-slate-400 block">0 tests</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-white border border-teal-100 shadow-sm">
+              <span class="text-[10px] font-extrabold uppercase text-emerald-700 block">30D Post-Meal</span>
+              <span id="doc-gluc-pp-val" class="text-lg font-black text-slate-900">--</span>
+              <span id="doc-gluc-pp-cnt" class="text-[10px] text-slate-400 block">0 tests</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outlier Count -->
+        <div class="flex items-center justify-between text-xs p-3 rounded-xl bg-rose-50 border border-rose-200">
+          <span class="text-rose-800 font-bold">Outlier BP Spikes (&ge; 135/85):</span>
+          <span id="doc-outlier-count" class="font-black text-rose-600 text-sm">0</span>
+        </div>
+
+        <!-- 1-Line Compact Historical Feed -->
+        <div class="space-y-1.5 pt-1">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 block">Recent High-Density Logs</span>
+          <div id="doc-recent-rows" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <!-- Data Export & Backup Actions Card -->
+      <div class="hl-card p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+          <div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Data Management & Privacy</h3>
+            <p class="text-[11px] text-slate-500">100% offline • Stored locally in IndexedDB</p>
+          </div>
+          <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Local Only</span>
+        </div>
+
+        <button id="btn-export-csv" class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 active:scale-98 transition shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Records as CSV (Excel)
+        </button>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="btn-backup-json" class="py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-200 transition active:scale-95 shadow-sm">
+            <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Backup JSON
+          </button>
+
+          <label class="py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-200 transition active:scale-95 cursor-pointer text-center shadow-sm">
+            <svg class="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Restore JSON
+            <input type="file" id="input-restore-json" accept=".json" class="hidden" />
+          </label>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="fixed bottom-0 inset-x-0 z-40 max-w-md mx-auto pointer-events-none pb-3 px-4">
+    <div class="pointer-events-auto bg-white/95 backdrop-blur-xl border border-slate-200 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.08)] px-4 py-2 flex items-center justify-between">
+      
+      <!-- Tab 1: Dashboard -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-purple-600" data-tab="tab-dashboard">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+
+      <!-- Tab 2: Trends -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600" data-tab="tab-trends">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      </button>
+
+      <!-- Center Elevated (+) Action Button -->
+      <div class="relative -top-4 flex items-center justify-center">
+        <button id="btn-open-log-drawer" class="w-14 h-14 rounded-full bg-[#B18AFF] hover:bg-[#9F75FF] text-white flex items-center justify-center shadow-[0_4px_18px_rgba(177,138,255,0.45)] active:scale-95 transition border-4 border-white">
+          <svg class="w-6 h-6 stroke-[3.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <!-- Tab 3: History -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600" data-tab="tab-history">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+      </button>
+
+      <!-- Tab 4: Doctor -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600" data-tab="tab-doctor">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ADD MEASUREMENT BOTTOM SHEET (Screenshots 92622 & 92621 layout) -->
+  <div id="drawer-backdrop" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-200 opacity-0 pointer-events-none"></div>
+
+  <div id="log-drawer" class="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden">
+    
+    <!-- Header -->
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <h3 class="text-xl font-bold text-slate-900 tracking-tight">Add</h3>
+      <button id="btn-close-log-drawer" class="p-1 text-slate-400 hover:text-slate-700 transition">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Content Area -->
+    <div class="overflow-y-auto px-6 py-5 space-y-5 flex-1">
+      
+      <!-- Type: Section -->
+      <div class="space-y-2">
+        <label class="block text-base font-medium text-slate-800">Type:</label>
+        <div class="relative">
+          <select id="select-vital-type" class="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl py-3.5 px-4 text-base font-medium text-slate-900 appearance-none focus:bg-white focus:border-[#B18AFF] focus:ring-2 focus:ring-purple-200 focus:outline-none transition pr-10">
+            <option value="bp" selected>Blood Pressure</option>
+            <option value="weight">Weight</option>
+            <option value="pulse">Pulse</option>
+            <option value="glucose">Blood glucose</option>
+            <option value="spo2">Oxygen saturation (SpO2)</option>
+            <option value="temp">Body temperature</option>
+            <option value="waist">Waist circumference</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- TYPE 1: BLOOD PRESSURE -->
+      <div id="section-form-bp" class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Systolic <span class="text-sm font-normal text-slate-500">mmHg :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="sys-single" placeholder="120" class="hl-form-input" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Diastolic <span class="text-sm font-normal text-slate-500">mmHg :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="dia-single" placeholder="80" class="hl-form-input" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Pulse <span class="text-sm font-normal text-slate-500">bpm :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-bp-pulse" placeholder="72" class="hl-form-input" />
+        </div>
+
+        <!-- Optional Second Reading for Clinical Auto-Averaging -->
+        <div id="secondary-reading-box" class="hidden pt-3 border-t border-slate-100 space-y-3">
+          <div class="flex items-center justify-between text-xs text-slate-500 font-semibold px-0.5">
+            <span>Second Reading (for 2-Reading Average):</span>
+            <span id="bp-calculated-avg" class="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">-- / --</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">2nd Systolic</label>
+              <input type="number" inputmode="numeric" id="sys-r2" placeholder="118" class="hl-form-input !py-2.5 !text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">2nd Diastolic</label>
+              <input type="number" inputmode="numeric" id="dia-r2" placeholder="78" class="hl-form-input !py-2.5 !text-sm" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TYPE 2: WEIGHT -->
+      <div id="section-form-weight" class="hidden space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Weight <span class="text-sm font-normal text-slate-500">kg :</span>
+          </label>
+          <input type="number" step="0.1" inputmode="decimal" id="in-weight" placeholder="74.5" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 3: PULSE -->
+      <div id="section-form-pulse" class="hidden space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Pulse <span class="text-sm font-normal text-slate-500">bpm :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-pulse-standalone" placeholder="72" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 4: BLOOD GLUCOSE -->
+      <div id="section-form-glucose" class="hidden space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Blood Glucose <span class="text-sm font-normal text-slate-500">mg/dL :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-glucose" placeholder="95" class="hl-form-input" />
+        </div>
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">Reading State :</label>
+          <div class="relative">
+            <select id="in-glucose-type" class="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl py-3 px-4 text-sm font-medium text-slate-900 appearance-none focus:bg-white focus:border-[#B18AFF] focus:outline-none transition pr-10">
+              <option value="Fasting">Fasting (Morning Before Food)</option>
+              <option value="Post-Prandial">Post-Meal (2 Hours After Food)</option>
+              <option value="Random">Random Check</option>
+              <option value="Bedtime">Bedtime</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TYPE 5: SPO2 -->
+      <div id="section-form-spo2" class="hidden space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Oxygen Saturation <span class="text-sm font-normal text-slate-500">% :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-spo2" placeholder="99" min="70" max="100" class="hl-form-input" />
+        </div>
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Pulse <span class="text-sm font-normal text-slate-500">bpm :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-spo2-pulse" placeholder="72" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 6: TEMPERATURE -->
+      <div id="section-form-temp" class="hidden space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Body Temperature <span class="text-sm font-normal text-slate-500">°F :</span>
+          </label>
+          <input type="number" step="0.1" inputmode="decimal" id="in-temp" placeholder="98.6" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 7: WAIST -->
+      <div id="section-form-waist" class="hidden space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-base font-medium text-slate-800">
+            Waist Circumference <span class="text-sm font-normal text-slate-500">cm :</span>
+          </label>
+          <input type="number" step="0.5" inputmode="decimal" id="in-waist" placeholder="88.0" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- Secondary Context Panel (Toggled via the [...] button) -->
+      <div id="secondary-context-panel" class="hidden p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
+        <div class="flex items-center justify-between text-slate-700 font-bold border-b border-slate-200 pb-1.5">
+          <span>Additional Context & Options</span>
+          <button type="button" id="btn-toggle-dual-mode" class="text-purple-600 hover:text-purple-800 font-bold underline">
+            + Enable 2nd Reading Average
+          </button>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Medication Context</label>
+          <select id="in-med-context" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs font-medium text-slate-800">
+            <option value="Before Telmikind / Meds">Before Telmikind / Meds</option>
+            <option value="Post Meds">Post Meds</option>
+            <option value="Bedtime">Bedtime</option>
+            <option value="Fasting (AM)">Fasting (AM)</option>
+            <option value="Random">Random</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Quick Note</label>
+          <input type="text" id="in-notes" placeholder="e.g. Rested 5m, salty dinner" class="w-full bg-white border border-slate-300 rounded-xl p-2 text-xs text-slate-800" />
+        </div>
+      </div>
+
+      <!-- AUTO-POPULATED & RETROACTIVE DATE/TIME PICKER -->
+      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            <span class="text-xs font-bold text-slate-700">Measured At:</span>
+          </div>
+          <button type="button" id="btn-toggle-datetime" class="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 px-2.5 py-0.5 rounded-md border border-purple-200 transition">
+            ✎ Change Date/Time
+          </button>
+        </div>
+
+        <!-- Clean Formatted Display -->
+        <div id="datetime-display-text" class="text-xs font-bold text-slate-900 bg-white py-2 px-3 rounded-xl border border-slate-200 flex items-center justify-between shadow-xs">
+          <span id="dt-friendly-label">Today, 05:45 PM</span>
+          <span class="text-[10px] uppercase tracking-wider text-emerald-600 font-extrabold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">Live Auto-Fill</span>
+        </div>
+
+        <!-- Editable DateTime Picker (Revealed on click) -->
+        <div id="datetime-edit-container" class="hidden pt-1">
+          <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Select Custom Date & Time (Retroactive Logging)</label>
+          <input type="datetime-local" id="in-timestamp" class="w-full bg-white border border-purple-300 rounded-xl p-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-200" />
+        </div>
+      </div>
+
+      <!-- Reset Form Button -->
+      <div class="pt-1">
+        <button type="button" id="btn-reset-form" class="py-2.5 px-4 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] text-slate-800 font-semibold text-sm border border-[#CBD5E1] flex items-center gap-2 active:scale-95 transition">
+          <svg class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset form
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer Action Row -->
+    <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+      <button type="button" id="btn-more-options" title="More options" class="w-12 h-11 rounded-2xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] text-slate-700 font-black text-base flex items-center justify-center active:scale-95 transition">
+        •••
+      </button>
+
+      <div class="flex items-center gap-3">
+        <button type="button" id="btn-cancel-modal" class="py-2.5 px-4 rounded-xl text-slate-700 hover:text-slate-900 font-semibold text-sm transition">
+          Cancel
+        </button>
+        <button type="button" id="btn-save-drawer" class="py-2.5 px-6 rounded-2xl bg-[#B18AFF] hover:bg-[#9F75FF] active:scale-95 text-white font-bold text-sm shadow-md shadow-purple-400/25 flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Save
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: CREATE PROFILE -->
+  <div id="modal-add-profile" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-3.5 border border-slate-200 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <h3 class="text-sm font-black text-slate-900">Create Profile</h3>
+        <button id="btn-close-prof-modal" class="p-1 rounded-full text-slate-400 hover:text-slate-700">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="form-create-profile" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Full Name</label>
+          <input type="text" id="prof-input-name" required placeholder="e.g. Papa, Sunita, Rahul" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:border-purple-500 focus:bg-white focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Relation</label>
+            <select id="prof-input-rel" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold focus:border-purple-500 focus:outline-none">
+              <option value="Self">Self</option>
+              <option value="Spouse">Spouse</option>
+              <option value="Parent">Parent</option>
+              <option value="Child">Child</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Age</label>
+            <input type="number" id="prof-input-age" placeholder="42" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:border-purple-500 focus:outline-none" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Known Conditions / Regimen</label>
+          <input type="text" id="prof-input-note" placeholder="e.g. Hypertension • Telmikind 40" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:border-purple-500 focus:outline-none" />
+        </div>
+        <button type="submit" class="w-full py-3 bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black rounded-xl text-xs mt-2 shadow-md transition active:scale-98">
+          Save Profile
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT PROFILE DETAILS (NEW FEATURE) -->
+  <div id="modal-edit-profile" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 space-y-3.5 border border-slate-200 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-black text-xs">✎</div>
+          <h3 class="text-sm font-black text-slate-900">Edit Profile Details</h3>
+        </div>
+        <button id="btn-close-edit-prof-modal" class="p-1 rounded-full text-slate-400 hover:text-slate-700">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="form-edit-profile" class="space-y-3 text-xs">
+        <input type="hidden" id="edit-prof-id" />
+
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Full Name</label>
+          <input type="text" id="edit-prof-name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:border-purple-500 focus:bg-white focus:outline-none" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Relationship</label>
+            <select id="edit-prof-rel" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold focus:border-purple-500 focus:outline-none">
+              <option value="Self">Self</option>
+              <option value="Spouse">Spouse</option>
+              <option value="Parent">Parent</option>
+              <option value="Child">Child</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Gender</label>
+            <select id="edit-prof-gender" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold focus:border-purple-500 focus:outline-none">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Age (Years)</label>
+            <input type="number" id="edit-prof-age" placeholder="40" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:border-purple-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Date of Birth</label>
+            <input type="date" id="edit-prof-dob" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-semibold focus:border-purple-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Known Diagnoses / Conditions</label>
+          <input type="text" id="edit-prof-condition" placeholder="e.g. Hypertension, Borderline Prediabetes" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:border-purple-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Current Prescribed Medications</label>
+          <input type="text" id="edit-prof-meds" placeholder="e.g. Telmikind 40 (1-0-0)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:border-purple-500 focus:outline-none" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Clinical BP Target</label>
+            <input type="text" id="edit-prof-bptarget" placeholder="< 130/80 mmHg" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:border-purple-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Blood Group (Optional)</label>
+            <select id="edit-prof-bg" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold focus:border-purple-500 focus:outline-none">
+              <option value="">Not Specified</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Physician / Emergency Notes</label>
+          <textarea id="edit-prof-notes" rows="2" placeholder="e.g. Avoid NSAIDs, target morning fasting readings" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-medium focus:border-purple-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="pt-2 space-y-2">
+          <button type="submit" class="w-full py-3 bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black rounded-xl text-xs shadow-md transition active:scale-98">
+            Save Changes
+          </button>
+          
+          <button type="button" id="btn-delete-profile-entry" class="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs border border-rose-200 transition active:scale-98">
+            Delete Profile
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Pill -->
+  <div id="toast" class="fixed top-5 inset-x-0 z-50 flex justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+    <div id="toast-text" class="bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg">
+      Saved
+    </div>
+  </div>
+
+  <script>
+    const DB_NAME = 'VitalsTrackerDB';
+    const DB_VERSION = 1;
+    const STORE_PROFILES = 'profiles';
+    const STORE_VITALS = 'vitals';
+
+    let activeProfileId = 1;
+    let profiles = [];
+    let isSecondReadingEnabled = false;
+    let currentHistoryFilter = 'all';
+
+    // Interactive time-range filters for Trends tab
+    let trendBpRange = 'all';
+    let trendGlucRange = '30';
+    let trendWeightRange = '30';
+    let trendPulseRange = '30';
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_PROFILES)) {
+            const ps = db.createObjectStore(STORE_PROFILES, { keyPath: 'id', autoIncrement: true });
+            ps.add({
+              name: 'Demo',
+              relation: 'Self',
+              gender: 'Male',
+              age: 40,
+              dob: '',
+              condition: 'Hypertension',
+              medications: 'Telmikind 40',
+              bpTarget: '< 130/80 mmHg',
+              bloodGroup: '',
+              notes: 'Monitor morning trough BP prior to medication.',
+              created_at: new Date().toISOString()
+            });
+          }
+          if (!db.objectStoreNames.contains(STORE_VITALS)) {
+            const vs = db.createObjectStore(STORE_VITALS, { keyPath: 'id', autoIncrement: true });
+            vs.createIndex('profileId', 'profileId', { unique: false });
+            vs.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetProfiles() {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readonly');
+        const req = tx.objectStore(STORE_PROFILES).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbAddProfile(p) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readwrite');
+        const req = tx.objectStore(STORE_PROFILES).add(p);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbUpdateProfile(p) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readwrite');
+        const req = tx.objectStore(STORE_PROFILES).put(p);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteProfile(id) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES, STORE_VITALS], 'readwrite');
+        tx.objectStore(STORE_PROFILES).delete(id);
+        
+        // Also remove records associated with this profile
+        const vitalsStore = tx.objectStore(STORE_VITALS);
+        const req = vitalsStore.getAll();
+        req.onsuccess = () => {
+          const list = req.result || [];
+          list.forEach(item => {
+            if (Number(item.profileId) === Number(id)) {
+              vitalsStore.delete(item.id);
+            }
+          });
+        };
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbGetVitals(pId = null) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readonly');
+        const req = tx.objectStore(STORE_VITALS).getAll();
+        req.onsuccess = () => {
+          let list = req.result || [];
+          if (pId !== null && pId !== undefined) {
+            list = list.filter(v => Number(v.profileId) === Number(pId));
+          }
+          list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbAddVital(rec) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readwrite');
+        const req = tx.objectStore(STORE_VITALS).add(rec);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteVital(id) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readwrite');
+        tx.objectStore(STORE_VITALS).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function seedDemoDataIfEmpty() {
+      const list = await dbGetVitals(activeProfileId);
+      if (list.length > 0) return;
+
+      const now = Date.now();
+      const mockPoints = [
+        { d: 45, sys: 128, dia: 82, p: 68, glu: 96, gt: 'Fasting', w: 83.2, spo2: 99, tmp: 98.6, wst: 89.0, med: 'Before Telmikind / Meds' },
+        { d: 35, sys: 126, dia: 80, p: 64, glu: 94, gt: 'Fasting', w: 82.8, spo2: 99, tmp: 98.6, wst: 88.5, med: 'Before Telmikind / Meds' },
+        { d: 28, sys: 124, dia: 78, p: 62, glu: 92, gt: 'Fasting', w: 82.5, spo2: 99, tmp: 98.6, wst: 88.5, med: 'Before Telmikind / Meds' },
+        { d: 24, sys: 122, dia: 76, p: 60, glu: 116, gt: 'Post-Prandial', w: 82.2, spo2: 99, tmp: 98.4, wst: 88.0, med: 'Post Meds' },
+        { d: 18, sys: 120, dia: 74, p: 58, glu: 89, gt: 'Fasting', w: 82.0, spo2: 100, tmp: 98.6, wst: 87.5, med: 'Before Telmikind / Meds' },
+        { d: 12, sys: 118, dia: 72, p: 59, glu: 88, gt: 'Random', w: 81.8, spo2: 99, tmp: 98.5, wst: 87.5, med: 'Random' },
+        { d: 7,  sys: 116, dia: 71, p: 58, glu: 90, gt: 'Fasting', w: 81.6, spo2: 100, tmp: 98.6, wst: 87.0, med: 'Before Telmikind / Meds' },
+        { d: 3,  sys: 115, dia: 70, p: 58, glu: 102, gt: 'Post-Prandial', w: 81.5, spo2: 99, tmp: 98.6, wst: 87.0, med: 'Post Meds' },
+        { d: 1,  sys: 114, dia: 70, p: 58, glu: 89, gt: 'Fasting', w: 81.4, spo2: 100, tmp: 98.6, wst: 86.8, med: 'Before Telmikind / Meds' }
+      ];
+
+      for (const m of mockPoints) {
+        const time = new Date(now - (m.d * 24 * 60 * 60 * 1000) - (8 * 3600 * 1000)).toISOString();
+        await dbAddVital({
+          profileId: activeProfileId,
+          timestamp: time,
+          systolic: m.sys,
+          diastolic: m.dia,
+          pulse: m.p,
+          glucose: m.glu,
+          glucoseType: m.gt,
+          weight: m.w,
+          spo2: m.spo2,
+          temp: m.tmp,
+          waist: m.wst,
+          medTiming: m.med,
+          notes: 'Routine check'
+        });
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = msg;
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 2200);
+    }
+  </script>
+
+  <script>
+    // Universal SVG chart builder
+    function renderLightLineChart(options) {
+      const { width = 340, height = 140, series = [] } = options;
+      const padL = 36, padR = 16, padT = 16, padB = 24;
+
+      let allVals = [];
+      series.forEach(s => s.points.forEach(p => { if (p.val != null && !isNaN(p.val)) allVals.push(p.val); }));
+
+      if (!allVals.length) {
+        return `
+          <div class="py-8 px-4 text-center space-y-2">
+            <div class="w-10 h-10 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div class="text-xs font-bold text-slate-700">No telemetry recorded in this time range</div>
+            <div class="text-[10px] text-slate-400">Tap + below to add a log</div>
+          </div>
+        `;
+      }
+
+      let minVal = Math.min(...allVals);
+      let maxVal = Math.max(...allVals);
+      if (minVal === maxVal) { minVal = Math.max(0, minVal - 5); maxVal += 5; }
+      const span = maxVal - minVal;
+
+      const nPoints = Math.max(...series.map(s => s.points.length));
+      const getX = (i) => nPoints <= 1 ? (width - padL - padR) / 2 + padL : padL + (i * ((width - padL - padR) / (nPoints - 1)));
+      const getY = (v) => height - padB - (((v - minVal) / span) * (height - padT - padB));
+
+      let gridSvg = '';
+      for (let t = 0; t <= 4; t++) {
+        const valTick = minVal + (t * (span / 4));
+        const yPos = getY(valTick);
+        gridSvg += `
+          <line x1="${padL}" y1="${yPos}" x2="${width - padR}" y2="${yPos}" stroke="#E2E8F0" stroke-dasharray="2,3" stroke-width="1" />
+          <text x="${padL - 6}" y="${yPos + 3}" font-size="8" fill="#94A3B8" text-anchor="end" font-weight="600">${Math.round(valTick)}</text>
+        `;
+      }
+
+      let pathsSvg = '';
+      series.forEach(s => {
+        if (!s.points.length) return;
+        const pts = s.points;
+        const dLine = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${getX(i).toFixed(1)} ${getY(p.val).toFixed(1)}`).join(' ');
+        if (s.fill && pts.length > 1) {
+          const dArea = `${dLine} L ${getX(pts.length - 1).toFixed(1)} ${height - padB} L ${getX(0).toFixed(1)} ${height - padB} Z`;
+          pathsSvg += `<path d="${dArea}" fill="${s.fill}" opacity="0.08" />`;
+        }
+        pathsSvg += `<path d="${dLine}" fill="none" stroke="${s.stroke}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />`;
+        pts.forEach((p, i) => {
+          pathsSvg += `<circle cx="${getX(i).toFixed(1)}" cy="${getY(p.val).toFixed(1)}" r="${s.r || 3.5}" fill="${s.stroke}" stroke="#FFFFFF" stroke-width="1.8" />`;
+        });
+      });
+
+      let dateSvg = '';
+      if (series[0] && series[0].points.length) {
+        const pts = series[0].points;
+        const indices = pts.length === 1 ? [0] : [0, pts.length - 1];
+        indices.forEach(i => {
+          if (pts[i] && pts[i].date) {
+            const d = new Date(pts[i].date);
+            const str = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+            dateSvg += `<text x="${getX(i).toFixed(1)}" y="${height - 6}" font-size="8.5" fill="#64748B" font-weight="700" text-anchor="middle">${str}</text>`;
+          }
+        });
+      }
+
+      return `<svg viewBox="0 0 ${width} ${height}" class="w-full h-36 overflow-visible select-none">${gridSvg}${pathsSvg}${dateSvg}</svg>`;
+    }
+
+    function filterRecordsByRange(records, rangeOption) {
+      if (rangeOption === 'all') return records;
+      const days = parseInt(rangeOption, 10);
+      const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
+      return records.filter(r => new Date(r.timestamp) >= cutoff);
+    }
+
+    // Helper to calculate exact recency string matching Screenshot 92615 (e.g. 'Last reading 24 days', 'Last reading 2h ago')
+    function formatRecency(timestamp) {
+      if (!timestamp) return 'No readings yet';
+      const now = Date.now();
+      const past = new Date(timestamp).getTime();
+      const diffMs = Math.max(0, now - past);
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffSecs / 60);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffDays > 0) {
+        return `Last reading ${diffDays} day${diffDays > 1 ? 's' : ''}`;
+      } else if (diffHours > 0) {
+        return `Last reading ${diffHours}h ago`;
+      } else if (diffMins > 0) {
+        return `Last reading ${diffMins}m ago`;
+      } else {
+        return `Last reading just now`;
+      }
+    }
+
+    // Computes 7-day and 30-day mean relative to the LAST CAPTURED reading timestamp
+    // (This ensures consistency even when readings were taken weeks or months ago, exactly as seen in 92615.jpg)
+    function computeRelativeStats(records, fieldExtractor) {
+      const valid = records
+        .map(r => ({ val: fieldExtractor(r), ts: new Date(r.timestamp).getTime() }))
+        .filter(item => item.val != null && !isNaN(item.val))
+        .sort((a, b) => b.ts - a.ts); // most recent first
+
+      if (!valid.length) {
+        return { latest: null, recency: 'No readings', trend7dStr: '7-day mean: --', mean30dStr: '30d: --' };
+      }
+
+      const latestItem = valid[0];
+      const anchorTs = latestItem.ts;
+      const latestVal = latestItem.val;
+
+      // 7 days prior to anchor
+      const w7Start = anchorTs - (7 * 24 * 60 * 60 * 1000);
+      const items7d = valid.filter(item => item.ts <= anchorTs && item.ts >= w7Start);
+      const mean7d = items7d.length ? (items7d.reduce((a, b) => a + b.val, 0) / items7d.length) : latestVal;
+
+      // 30 days prior to anchor
+      const w30Start = anchorTs - (30 * 24 * 60 * 60 * 1000);
+      const items30d = valid.filter(item => item.ts <= anchorTs && item.ts >= w30Start);
+      const mean30d = items30d.length ? (items30d.reduce((a, b) => a + b.val, 0) / items30d.length) : mean7d;
+
+      // Delta between latest value and 7-day mean
+      const delta7d = latestVal - mean7d;
+      const sign = delta7d >= 0 ? '+' : '';
+      const deltaArrow = delta7d > 0 ? '▲' : (delta7d < 0 ? '▼' : '•');
+      const arrowColor = delta7d > 0 ? 'text-amber-500' : 'text-emerald-500';
+
+      const trend7dStr = items7d.length > 1
+        ? `7-day mean: <span class="${arrowColor} font-bold">${sign}${delta7d.toFixed(1)}</span>`
+        : `7-day mean: ${mean7d.toFixed(1)}`;
+
+      const mean30dStr = `30d: <strong class="text-slate-700 font-bold">${mean30d.toFixed(1)}</strong>`;
+
+      return {
+        latest: latestVal,
+        timestamp: latestItem.ts,
+        recency: formatRecency(latestItem.ts),
+        trend7dStr,
+        mean30dStr
+      };
+    }
+  </script>
+
+  <script>
+    function renderDashboardMetrics(records) {
+      const container = document.getElementById('dash-metrics-container');
+      const active = profiles.find(p => p.id === activeProfileId);
+      const profileName = active ? active.name : 'Welcome';
+      const ageStr = active && active.age ? ` (${active.age}y)` : '';
+      document.getElementById('dash-greeting-sub').textContent = `Hello ${profileName}${ageStr}, welcome back.`;
+
+      if (!records.length) {
+        container.innerHTML = `<div class="hl-card p-6 text-center text-xs text-slate-400">No telemetry recorded yet. Tap <strong class="text-purple-600 font-black">+</strong> below to log vitals.</div>`;
+        document.getElementById('dash-7d-am-val').textContent = '-- / --';
+        document.getElementById('dash-7d-pm-val').textContent = '-- / --';
+        document.getElementById('score-ring-number').textContent = '--';
+        document.getElementById('score-sub-note').textContent = 'Awaiting initial readings.';
+        return;
+      }
+
+      // 7-day AM and PM blood pressure averages relative to most recent reading date
+      const bpRecords = records.filter(r => r.systolic && r.diastolic);
+      if (bpRecords.length) {
+        const anchorBPTime = new Date(bpRecords[0].timestamp).getTime();
+        const bp7WindowStart = anchorBPTime - (7 * 24 * 60 * 60 * 1000);
+        const bp7 = bpRecords.filter(r => {
+          const t = new Date(r.timestamp).getTime();
+          return t <= anchorBPTime && t >= bp7WindowStart;
+        });
+
+        const ams = bp7.filter(r => { const h = new Date(r.timestamp).getHours(); return h >= 4 && h < 12; });
+        const pms = bp7.filter(r => { const h = new Date(r.timestamp).getHours(); return h >= 17 && h <= 23; });
+
+        if (ams.length > 0) {
+          const aS = Math.round(ams.reduce((a, b) => a + b.systolic, 0) / ams.length);
+          const aD = Math.round(ams.reduce((a, b) => a + b.diastolic, 0) / ams.length);
+          document.getElementById('dash-7d-am-val').textContent = `${aS} / ${aD}`;
+          document.getElementById('dash-7d-am-sub').textContent = `${ams.length} AM logs`;
+        } else {
+          document.getElementById('dash-7d-am-val').textContent = '-- / --';
+          document.getElementById('dash-7d-am-sub').textContent = '0 AM logs';
+        }
+
+        if (pms.length > 0) {
+          const pS = Math.round(pms.reduce((a, b) => a + b.systolic, 0) / pms.length);
+          const pD = Math.round(pms.reduce((a, b) => a + b.diastolic, 0) / pms.length);
+          document.getElementById('dash-7d-pm-val').textContent = `${pS} / ${pD}`;
+          document.getElementById('dash-7d-pm-sub').textContent = `${pms.length} PM logs`;
+        } else {
+          document.getElementById('dash-7d-pm-val').textContent = '-- / --';
+          document.getElementById('dash-7d-pm-sub').textContent = '0 PM logs';
+        }
+      }
+
+      // Health Score Calculation based on latest BP
+      const latestBP = bpRecords[0];
+      let score = 94;
+      let scoreText = 'Your latest blood pressure is sitting in the optimal band. Optimal range maintains vascular longevity.';
+      if (latestBP) {
+        if (latestBP.systolic < 120 && latestBP.diastolic < 80) {
+          score = 96;
+          scoreText = 'Your blood pressure is sitting in the optimal band. Optimal range maintains vascular longevity.';
+        } else if (latestBP.systolic <= 129 && latestBP.diastolic < 80) {
+          score = 91;
+          scoreText = 'Systolic is elevated but well within compensatory range. Maintain sodium control.';
+        } else if (latestBP.systolic <= 139 || latestBP.diastolic <= 89) {
+          score = 84;
+          scoreText = 'Mild blood pressure elevation detected. Review sodium, hydration, and sleep.';
+        } else {
+          score = 72;
+          scoreText = 'Elevated blood pressure logged. Retest after resting 5 minutes with supported back.';
+        }
+      }
+      document.getElementById('score-ring-number').textContent = score;
+      document.getElementById('dash-clinical-banner').textContent = scoreText;
+
+      // Extract stats for each category using relative rolling anchor algorithm
+      const statsSys = computeRelativeStats(records, r => r.systolic);
+      const statsDia = computeRelativeStats(records, r => r.diastolic);
+      const statsPulse = computeRelativeStats(records, r => r.pulse);
+      const statsSpo2 = computeRelativeStats(records, r => r.spo2);
+      const statsGluFast = computeRelativeStats(records, r => (r.glucose && (r.glucoseType === 'Fasting' || (r.medTiming && r.medTiming.includes('Fasting')))) ? r.glucose : null);
+      const statsGluPP = computeRelativeStats(records, r => (r.glucose && (r.glucoseType === 'Post-Prandial' || (r.medTiming && r.medTiming.includes('Post')))) ? r.glucose : null);
+      const statsWeight = computeRelativeStats(records, r => r.weight);
+      const statsTemp = computeRelativeStats(records, r => r.temp);
+      const statsWaist = computeRelativeStats(records, r => r.waist);
+
+      // Structure and typography replicating screenshot 92615.jpg
+      const tiles = [
+        {
+          tag: 'BP (SYS)',
+          val: statsSys.latest != null ? `${statsSys.latest.toFixed(1)}` : '--',
+          unit: 'mmHg',
+          recency: statsSys.recency,
+          trend: `${statsSys.trend7dStr} &nbsp;•&nbsp; ${statsSys.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`
+        },
+        {
+          tag: 'BP (DIA)',
+          val: statsDia.latest != null ? `${statsDia.latest.toFixed(1)}` : '--',
+          unit: 'mmHg',
+          recency: statsDia.recency,
+          trend: `${statsDia.trend7dStr} &nbsp;•&nbsp; ${statsDia.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`
+        },
+        {
+          tag: 'PULSE',
+          val: statsPulse.latest != null ? `${statsPulse.latest.toFixed(1)}` : '--',
+          unit: 'bpm',
+          recency: statsPulse.recency,
+          trend: `${statsPulse.trend7dStr} &nbsp;•&nbsp; ${statsPulse.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`
+        },
+        {
+          tag: 'OXYGEN SATURATION',
+          val: statsSpo2.latest != null ? `${statsSpo2.latest.toFixed(1)}` : '--',
+          unit: '%',
+          recency: statsSpo2.recency,
+          trend: `${statsSpo2.trend7dStr} &nbsp;•&nbsp; ${statsSpo2.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`
+        },
+        {
+          tag: 'GLUCOSE — FASTING',
+          val: statsGluFast.latest != null ? `${statsGluFast.latest.toFixed(1)}` : '--',
+          unit: 'mg/dL',
+          recency: statsGluFast.recency,
+          trend: `${statsGluFast.trend7dStr} &nbsp;•&nbsp; ${statsGluFast.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`
+        },
+        {
+          tag: 'GLUCOSE — POST MEAL',
+          val: statsGluPP.latest != null ? `${statsGluPP.latest.toFixed(1)}` : '--',
+          unit: 'mg/dL',
+          recency: statsGluPP.recency,
+          trend: `${statsGluPP.trend7dStr} &nbsp;•&nbsp; ${statsGluPP.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>`
+        },
+        {
+          tag: 'BODY WEIGHT',
+          val: statsWeight.latest != null ? `${statsWeight.latest.toFixed(1)}` : '--',
+          unit: 'kg',
+          recency: statsWeight.recency,
+          trend: `${statsWeight.trend7dStr} &nbsp;•&nbsp; ${statsWeight.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 7.65l.77.77L12 20.66l7.65-7.66.77-.77a5.4 5.4 0 0 0 0-7.65z"/></svg>`
+        },
+        {
+          tag: 'BODY TEMPERATURE',
+          val: statsTemp.latest != null ? `${statsTemp.latest.toFixed(1)}` : '--',
+          unit: '°F',
+          recency: statsTemp.recency,
+          trend: `${statsTemp.trend7dStr} &nbsp;•&nbsp; ${statsTemp.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`
+        },
+        {
+          tag: 'WAIST CIRCUMFERENCE',
+          val: statsWaist.latest != null ? `${statsWaist.latest.toFixed(1)}` : '--',
+          unit: 'cm',
+          recency: statsWaist.recency,
+          trend: `${statsWaist.trend7dStr} &nbsp;•&nbsp; ${statsWaist.mean30dStr}`,
+          iconSvg: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`
+        }
+      ];
+
+      container.innerHTML = tiles.map(t => `
+        <div class="hl-vital-tile space-y-1">
+          <!-- Top Row: Parameter Category and Icon -->
+          <div class="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+            <span>${t.tag}</span>
+            <span>${t.iconSvg}</span>
+          </div>
+
+          <!-- Big Bold Primary Reading with Decimal Precision -->
+          <div class="flex items-baseline gap-1.5 pt-0.5">
+            <span class="text-3xl font-black tracking-tight text-slate-900 leading-none">${t.val}</span>
+            <span class="text-sm font-bold text-slate-400">${t.unit}</span>
+          </div>
+
+          <!-- Recency Subtitle: when reading was captured -->
+          <div class="text-[11px] font-medium text-slate-400 pt-0.5">
+            ${t.recency}
+          </div>
+
+          <!-- Dedicated Trend Line: 7-day mean & 30d mean (computed relative to reading date) -->
+          <div class="text-[11px] font-medium text-slate-500 pt-1.5 border-t border-slate-100 flex items-center">
+            ${t.trend}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAllCharts(records) {
+      // 1. Blood Pressure Chart
+      const bpFiltered = filterRecordsByRange(records, trendBpRange);
+      const bpChrono = [...bpFiltered].filter(r => r.systolic && r.diastolic).reverse();
+      const bpContainer = document.getElementById('chart-bp-container');
+
+      if (bpChrono.length > 0) {
+        bpContainer.innerHTML = renderLightLineChart({
+          series: [
+            { stroke: '#E11D48', fill: '#E11D48', points: bpChrono.map(r => ({ val: r.systolic, date: r.timestamp })) },
+            { stroke: '#0284C7', fill: '#0284C7', points: bpChrono.map(r => ({ val: r.diastolic, date: r.timestamp })) }
+          ]
+        });
+
+        const sAvg = Math.round(bpChrono.reduce((a, b) => a + b.systolic, 0) / bpChrono.length);
+        const dAvg = Math.round(bpChrono.reduce((a, b) => a + b.diastolic, 0) / bpChrono.length);
+        const inTargetCount = bpChrono.filter(r => r.systolic < 130 && r.diastolic < 80).length;
+        const targetPct = Math.round((inTargetCount / bpChrono.length) * 100);
+
+        document.getElementById('bp-stat-sys-avg').textContent = `${sAvg} mmHg`;
+        document.getElementById('bp-stat-dia-avg').textContent = `${dAvg} mmHg`;
+        document.getElementById('bp-stat-target-badge').textContent = `${targetPct}% In Target`;
+        document.getElementById('bp-stat-summary').textContent = `${bpChrono.length} reading${bpChrono.length > 1 ? 's' : ''} in ${trendBpRange === 'all' ? 'All Time' : trendBpRange + 'd'}`;
+      } else {
+        bpContainer.innerHTML = renderLightLineChart({ series: [] });
+        document.getElementById('bp-stat-sys-avg').textContent = '-- mmHg';
+        document.getElementById('bp-stat-dia-avg').textContent = '-- mmHg';
+        document.getElementById('bp-stat-target-badge').textContent = '--% In Target';
+        document.getElementById('bp-stat-summary').textContent = `0 readings in ${trendBpRange === 'all' ? 'All Time' : trendBpRange + 'd'}`;
+      }
+
+      // 2. Glucose Chart
+      const glucFiltered = filterRecordsByRange(records, trendGlucRange);
+      const glucChrono = [...glucFiltered].filter(r => r.glucose).reverse();
+      const glucContainer = document.getElementById('chart-gluc-container');
+
+      if (glucChrono.length > 0) {
+        glucContainer.innerHTML = renderLightLineChart({
+          series: [{ stroke: '#10B981', fill: '#10B981', points: glucChrono.map(r => ({ val: r.glucose, date: r.timestamp })) }]
+        });
+        const gAvg = Math.round(glucChrono.reduce((a, b) => a + b.glucose, 0) / glucChrono.length);
+        document.getElementById('gluc-stat-avg').textContent = `${gAvg} mg/dL (${glucChrono.length} logs)`;
+      } else {
+        glucContainer.innerHTML = renderLightLineChart({ series: [] });
+        document.getElementById('gluc-stat-avg').textContent = `-- mg/dL (0 logs)`;
+      }
+
+      // 3. Weight Chart
+      const weightFiltered = filterRecordsByRange(records, trendWeightRange);
+      const weightChrono = [...weightFiltered].filter(r => r.weight).reverse();
+      const weightContainer = document.getElementById('chart-weight-container');
+
+      if (weightChrono.length > 0) {
+        weightContainer.innerHTML = renderLightLineChart({
+          series: [{ stroke: '#9333EA', fill: '#9333EA', points: weightChrono.map(r => ({ val: r.weight, date: r.timestamp })) }]
+        });
+        if (weightChrono.length >= 2) {
+          const delta = (weightChrono[weightChrono.length - 1].weight - weightChrono[0].weight).toFixed(1);
+          const sign = delta > 0 ? '+' : '';
+          document.getElementById('weight-stat-delta').textContent = `${sign}${delta} kg (${weightChrono.length} logs)`;
+        } else {
+          document.getElementById('weight-stat-delta').textContent = `${weightChrono[0].weight} kg (Baseline)`;
+        }
+      } else {
+        weightContainer.innerHTML = renderLightLineChart({ series: [] });
+        document.getElementById('weight-stat-delta').textContent = `-- kg (0 logs)`;
+      }
+
+      // 4. Pulse Chart
+      const pulseFiltered = filterRecordsByRange(records, trendPulseRange);
+      const pulseChrono = [...pulseFiltered].filter(r => r.pulse).reverse();
+      const pulseContainer = document.getElementById('chart-pulse-container');
+
+      if (pulseChrono.length > 0) {
+        pulseContainer.innerHTML = renderLightLineChart({
+          series: [{ stroke: '#E11D48', fill: '#E11D48', points: pulseChrono.map(r => ({ val: r.pulse, date: r.timestamp })) }]
+        });
+      } else {
+        pulseContainer.innerHTML = renderLightLineChart({ series: [] });
+      }
+    }
+
+    function renderHistoryList(records) {
+      const feed = document.getElementById('history-feed');
+      let filtered = records;
+      if (currentHistoryFilter === 'bp') filtered = records.filter(r => r.systolic && r.diastolic);
+      if (currentHistoryFilter === 'glucose') filtered = records.filter(r => r.glucose);
+
+      if (!filtered.length) {
+        feed.innerHTML = `<div class="hl-card p-6 text-center text-xs text-slate-400">No records found.</div>`;
+        return;
+      }
+
+      feed.innerHTML = filtered.map(r => {
+        const dt = new Date(r.timestamp);
+        const dateStr = dt.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const badges = [];
+        if (r.systolic && r.diastolic) badges.push(`<span class="px-2.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-black text-xs border border-rose-200">${r.systolic}/${r.diastolic} <span class="text-[10px] text-slate-400">mmHg</span></span>`);
+        if (r.pulse) badges.push(`<span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold text-xs border border-purple-200">♥ ${r.pulse}</span>`);
+        if (r.glucose) badges.push(`<span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 font-black text-xs border border-teal-200">🩸 ${r.glucose} (${r.glucoseType || 'G'})</span>`);
+        if (r.weight) badges.push(`<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-xs border border-slate-200">⚖ ${r.weight}kg</span>`);
+        if (r.spo2) badges.push(`<span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">% ${r.spo2}</span>`);
+
+        return `
+          <div class="hl-card p-3.5 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-900">${dateStr} • <span class="text-slate-500 font-medium">${timeStr}</span></span>
+              <button onclick="handleDelete(${r.id})" class="text-slate-400 hover:text-rose-600 p-1 transition">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-1.5">${badges.join('')}</div>
+            ${r.medTiming || r.notes ? `
+              <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <span>${r.medTiming || ''}</span>
+                <span class="italic text-slate-400 truncate ml-2">${r.notes || ''}</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDoctorConsultation(records) {
+      const active = profiles.find(p => p.id === activeProfileId) || { name: 'Demo', relation: 'Self' };
+      const ageStr = active.age ? ` • Age ${active.age}` : '';
+      const genderStr = active.gender ? ` • ${active.gender}` : '';
+      const bloodStr = active.bloodGroup ? ` • Blood Group ${active.bloodGroup}` : '';
+      
+      document.getElementById('doc-patient-name').textContent = `Patient: ${active.name} (${active.relation || 'Member'}${ageStr}${genderStr}${bloodStr})`;
+      
+      let condText = active.condition || 'Hypertension';
+      if (active.medications) condText += ` • Meds: ${active.medications}`;
+      document.getElementById('doc-patient-condition').textContent = condText;
+      
+      document.getElementById('doc-patient-target-note').textContent = `Clinical BP Target: ${active.bpTarget || '< 130/80 mmHg'}${active.notes ? ' • Note: ' + active.notes : ''}`;
+
+      const now = Date.now();
+      const sevenDaysAgo = new Date(now - (7 * 24 * 60 * 60 * 1000));
+      const thirtyDaysAgo = new Date(now - (30 * 24 * 60 * 60 * 1000));
+
+      const bp30d = records.filter(r => r.systolic && r.diastolic && new Date(r.timestamp) >= thirtyDaysAgo);
+      const bp7d = bp30d.filter(r => new Date(r.timestamp) >= sevenDaysAgo);
+
+      const calcAmPm = (list) => {
+        const ams = list.filter(r => { const h = new Date(r.timestamp).getHours(); return h >= 4 && h < 12; });
+        const pms = list.filter(r => { const h = new Date(r.timestamp).getHours(); return h >= 17 && h <= 23; });
+        return { ams, pms };
+      };
+
+      if (bp7d.length > 0) {
+        const s = Math.round(bp7d.reduce((a, b) => a + b.systolic, 0) / bp7d.length);
+        const d = Math.round(bp7d.reduce((a, b) => a + b.diastolic, 0) / bp7d.length);
+        document.getElementById('doc-7d-overall').textContent = `Overall: ${s}/${d} (${bp7d.length} tests)`;
+      } else {
+        document.getElementById('doc-7d-overall').textContent = 'Overall: --/--';
+      }
+
+      const bp7 = calcAmPm(bp7d);
+      if (bp7.ams.length > 0) {
+        const s = Math.round(bp7.ams.reduce((a, b) => a + b.systolic, 0) / bp7.ams.length);
+        const d = Math.round(bp7.ams.reduce((a, b) => a + b.diastolic, 0) / bp7.ams.length);
+        document.getElementById('doc-7d-am-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-7d-am-cnt').textContent = `${bp7.ams.length} AM logs`;
+      } else {
+        document.getElementById('doc-7d-am-avg').textContent = '--/--';
+        document.getElementById('doc-7d-am-cnt').textContent = '0 AM logs';
+      }
+
+      if (bp7.pms.length > 0) {
+        const s = Math.round(bp7.pms.reduce((a, b) => a + b.systolic, 0) / bp7.pms.length);
+        const d = Math.round(bp7.pms.reduce((a, b) => a + b.diastolic, 0) / bp7.pms.length);
+        document.getElementById('doc-7d-pm-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-7d-pm-cnt').textContent = `${bp7.pms.length} PM logs`;
+      } else {
+        document.getElementById('doc-7d-pm-avg').textContent = '--/--';
+        document.getElementById('doc-7d-pm-cnt').textContent = '0 PM logs';
+      }
+
+      if (bp30d.length > 0) {
+        const s = Math.round(bp30d.reduce((a, b) => a + b.systolic, 0) / bp30d.length);
+        const d = Math.round(bp30d.reduce((a, b) => a + b.diastolic, 0) / bp30d.length);
+        document.getElementById('doc-30d-overall').textContent = `Overall: ${s}/${d} (${bp30d.length} tests)`;
+      } else {
+        document.getElementById('doc-30d-overall').textContent = 'Overall: --/--';
+      }
+
+      const bp30 = calcAmPm(bp30d);
+      if (bp30.ams.length > 0) {
+        const s = Math.round(bp30.ams.reduce((a, b) => a + b.systolic, 0) / bp30.ams.length);
+        const d = Math.round(bp30.ams.reduce((a, b) => a + b.diastolic, 0) / bp30.ams.length);
+        document.getElementById('doc-30d-am-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-30d-am-cnt').textContent = `${bp30.ams.length} AM logs`;
+      } else {
+        document.getElementById('doc-30d-am-avg').textContent = '--/--';
+        document.getElementById('doc-30d-am-cnt').textContent = '0 AM logs';
+      }
+
+      if (bp30.pms.length > 0) {
+        const s = Math.round(bp30.pms.reduce((a, b) => a + b.systolic, 0) / bp30.pms.length);
+        const d = Math.round(bp30.pms.reduce((a, b) => a + b.diastolic, 0) / bp30.pms.length);
+        document.getElementById('doc-30d-pm-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-30d-pm-cnt').textContent = `${bp30.pms.length} PM logs`;
+      } else {
+        document.getElementById('doc-30d-pm-avg').textContent = '--/--';
+        document.getElementById('doc-30d-pm-cnt').textContent = '0 PM logs';
+      }
+
+      const outliers = bp30d.filter(r => r.systolic >= 135 || r.diastolic >= 85).length;
+      document.getElementById('doc-outlier-count').textContent = outliers;
+
+      const gluc30d = records.filter(r => r.glucose && new Date(r.timestamp) >= thirtyDaysAgo);
+      const fastList = gluc30d.filter(r => r.glucoseType === 'Fasting' || (r.medTiming && r.medTiming.includes('Fasting')));
+      const ppList = gluc30d.filter(r => r.glucoseType === 'Post-Prandial' || (r.medTiming && r.medTiming.includes('Post')));
+
+      if (fastList.length > 0) {
+        const gAvg = Math.round(fastList.reduce((a, b) => a + b.glucose, 0) / fastList.length);
+        document.getElementById('doc-gluc-fast-val').textContent = gAvg;
+        document.getElementById('doc-gluc-fast-cnt').textContent = `${fastList.length} check(s)`;
+      } else {
+        document.getElementById('doc-gluc-fast-val').textContent = '--';
+        document.getElementById('doc-gluc-fast-cnt').textContent = '0 tests';
+      }
+
+      if (ppList.length > 0) {
+        const gAvg = Math.round(ppList.reduce((a, b) => a + b.glucose, 0) / ppList.length);
+        document.getElementById('doc-gluc-pp-val').textContent = gAvg;
+        document.getElementById('doc-gluc-pp-cnt').textContent = `${ppList.length} check(s)`;
+      } else {
+        document.getElementById('doc-gluc-pp-val').textContent = '--';
+        document.getElementById('doc-gluc-pp-cnt').textContent = '0 tests';
+      }
+
+      const recentBox = document.getElementById('doc-recent-rows');
+      recentBox.innerHTML = records.slice(0, 7).map(r => {
+        const dStr = new Date(r.timestamp).toLocaleDateString([], { month: 'numeric', day: 'numeric' });
+        const parts = [];
+        if (r.systolic && r.diastolic) parts.push(`<strong>${r.systolic}/${r.diastolic}</strong> mmHg`);
+        if (r.pulse) parts.push(`♥ ${r.pulse}`);
+        if (r.glucose) parts.push(`🩸 ${r.glucose}`);
+        if (r.weight) parts.push(`⚖ ${r.weight}kg`);
+        const text = parts.join(' • ');
+        const timing = r.medTiming ? r.medTiming.replace('Before Telmikind / Meds', 'AM Meds').replace('Post Meds', 'PM Meds') : '';
+        return `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <div class="flex items-center gap-2 truncate">
+              <span class="text-slate-400 font-bold text-[11px] shrink-0">${dStr}</span>
+              <span class="truncate text-slate-800">${text}</span>
+            </div>
+            <span class="text-[10px] text-slate-500 font-semibold shrink-0 ml-2">${timing}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function refreshAllViews() {
+      const records = await dbGetVitals(activeProfileId);
+      renderDashboardMetrics(records);
+      renderAllCharts(records);
+      renderHistoryList(records);
+      renderDoctorConsultation(records);
+    }
+  </script>
+
+  <script>
+    // Tab Switching
+    const tabs = ['tab-dashboard', 'tab-trends', 'tab-history', 'tab-doctor'];
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-tab');
+        tabs.forEach(t => document.getElementById(t).classList.add('hidden'));
+        document.getElementById(targetId).classList.remove('hidden');
+
+        document.querySelectorAll('.nav-tab-btn').forEach(b => {
+          b.className = 'nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600';
+        });
+        btn.className = 'nav-tab-btn flex flex-col items-center gap-1 text-purple-600 font-extrabold';
+        refreshAllViews();
+      });
+    });
+
+    const drawer = document.getElementById('log-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    const selectVitalType = document.getElementById('select-vital-type');
+
+    function syncFormDateTimeToNow() {
+      const now = new Date();
+      const localISO = (new Date(now.getTime() - now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      document.getElementById('in-timestamp').value = localISO;
+
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('dt-friendly-label').textContent = `Today, ${timeStr}`;
+      document.getElementById('datetime-edit-container').classList.add('hidden');
+    }
+
+    // Toggle Retroactive DateTime Picker
+    document.getElementById('btn-toggle-datetime').addEventListener('click', () => {
+      const box = document.getElementById('datetime-edit-container');
+      box.classList.toggle('hidden');
+    });
+
+    document.getElementById('in-timestamp').addEventListener('change', (e) => {
+      if (e.target.value) {
+        const chosen = new Date(e.target.value);
+        const dStr = chosen.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const tStr = chosen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('dt-friendly-label').textContent = `${dStr}, ${tStr}`;
+      }
+    });
+
+    function openDrawer() {
+      syncFormDateTimeToNow();
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      backdrop.classList.add('opacity-100', 'pointer-events-auto');
+      drawer.classList.remove('drawer-hidden');
+      drawer.classList.add('drawer-visible');
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('drawer-visible');
+      drawer.classList.add('drawer-hidden');
+      backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    document.getElementById('btn-open-log-drawer').addEventListener('click', openDrawer);
+    document.getElementById('btn-dash-add-shortcut').addEventListener('click', openDrawer);
+    document.getElementById('btn-close-log-drawer').addEventListener('click', closeDrawer);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+
+    // Switch between Vital Types
+    const sectionIds = [
+      'section-form-bp',
+      'section-form-weight',
+      'section-form-pulse',
+      'section-form-glucose',
+      'section-form-spo2',
+      'section-form-temp',
+      'section-form-waist'
+    ];
+
+    selectVitalType.addEventListener('change', (e) => {
+      const val = e.target.value;
+      sectionIds.forEach(id => document.getElementById(id).classList.add('hidden'));
+
+      if (val === 'bp') document.getElementById('section-form-bp').classList.remove('hidden');
+      else if (val === 'weight') document.getElementById('section-form-weight').classList.remove('hidden');
+      else if (val === 'pulse') document.getElementById('section-form-pulse').classList.remove('hidden');
+      else if (val === 'glucose') document.getElementById('section-form-glucose').classList.remove('hidden');
+      else if (val === 'spo2') document.getElementById('section-form-spo2').classList.remove('hidden');
+      else if (val === 'temp') document.getElementById('section-form-temp').classList.remove('hidden');
+      else if (val === 'waist') document.getElementById('section-form-waist').classList.remove('hidden');
+    });
+
+    // Secondary Options (...) toggle
+    document.getElementById('btn-more-options').addEventListener('click', () => {
+      const panel = document.getElementById('secondary-context-panel');
+      panel.classList.toggle('hidden');
+    });
+
+    // 2nd Reading / Averaging Toggle
+    document.getElementById('btn-toggle-dual-mode').addEventListener('click', () => {
+      isSecondReadingEnabled = !isSecondReadingEnabled;
+      const box = document.getElementById('secondary-reading-box');
+      const btn = document.getElementById('btn-toggle-dual-mode');
+      if (isSecondReadingEnabled) {
+        box.classList.remove('hidden');
+        btn.textContent = '✕ Disable 2nd Reading Average';
+        btn.classList.add('text-rose-600');
+      } else {
+        box.classList.add('hidden');
+        btn.textContent = '+ Enable 2nd Reading Average';
+        btn.classList.remove('text-rose-600');
+      }
+    });
+
+    // Auto calculate average if 2nd reading is active
+    function updateBPAverage() {
+      const s1 = parseFloat(document.getElementById('sys-single').value);
+      const d1 = parseFloat(document.getElementById('dia-single').value);
+      const s2 = parseFloat(document.getElementById('sys-r2').value);
+      const d2 = parseFloat(document.getElementById('dia-r2').value);
+      const avgBadge = document.getElementById('bp-calculated-avg');
+
+      if (!isNaN(s1) && !isNaN(d1) && !isNaN(s2) && !isNaN(d2)) {
+        avgBadge.textContent = `${Math.round((s1 + s2) / 2)} / ${Math.round((d1 + d2) / 2)} mmHg`;
+      } else if (!isNaN(s1) && !isNaN(d1)) {
+        avgBadge.textContent = `${s1} / ${d1} mmHg`;
+      } else {
+        avgBadge.textContent = '-- / --';
+      }
+    }
+    ['sys-single', 'dia-single', 'sys-r2', 'dia-r2'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateBPAverage);
+    });
+
+    // Reset Form
+    document.getElementById('btn-reset-form').addEventListener('click', () => {
+      document.getElementById('sys-single').value = '';
+      document.getElementById('dia-single').value = '';
+      document.getElementById('in-bp-pulse').value = '';
+      document.getElementById('sys-r2').value = '';
+      document.getElementById('dia-r2').value = '';
+      document.getElementById('in-weight').value = '';
+      document.getElementById('in-pulse-standalone').value = '';
+      document.getElementById('in-glucose').value = '';
+      document.getElementById('in-spo2').value = '';
+      document.getElementById('in-spo2-pulse').value = '';
+      document.getElementById('in-temp').value = '';
+      document.getElementById('in-waist').value = '';
+      document.getElementById('in-notes').value = '';
+      document.getElementById('bp-calculated-avg').textContent = '-- / --';
+      syncFormDateTimeToNow();
+      showToast('Form reset');
+    });
+
+    // Validated Save Handler
+    document.getElementById('btn-save-drawer').addEventListener('click', async () => {
+      const type = selectVitalType.value;
+      let sys = null;
+      let dia = null;
+      let pulse = null;
+      let glucose = null;
+      let glucoseType = null;
+      let weight = null;
+      let spo2 = null;
+      let temp = null;
+      let waist = null;
+
+      if (type === 'bp') {
+        const s1 = parseFloat(document.getElementById('sys-single').value);
+        const d1 = parseFloat(document.getElementById('dia-single').value);
+        const s2 = parseFloat(document.getElementById('sys-r2').value);
+        const d2 = parseFloat(document.getElementById('dia-r2').value);
+
+        if ((!isNaN(s1) && isNaN(d1)) || (isNaN(s1) && !isNaN(d1))) {
+          showToast('Please enter both Systolic and Diastolic');
+          return;
+        }
+
+        if (!isNaN(s1) && !isNaN(d1)) {
+          if (isSecondReadingEnabled && !isNaN(s2) && !isNaN(d2)) {
+            sys = Math.round((s1 + s2) / 2);
+            dia = Math.round((d1 + d2) / 2);
+          } else {
+            sys = Math.round(s1);
+            dia = Math.round(d1);
+          }
+        }
+        const p = parseInt(document.getElementById('in-bp-pulse').value, 10);
+        if (!isNaN(p) && p > 0) pulse = p;
+      } else if (type === 'weight') {
+        const w = parseFloat(document.getElementById('in-weight').value);
+        if (!isNaN(w)) weight = parseFloat(w.toFixed(1));
+      } else if (type === 'pulse') {
+        const p = parseInt(document.getElementById('in-pulse-standalone').value, 10);
+        if (!isNaN(p) && p > 0) pulse = p;
+      } else if (type === 'glucose') {
+        const g = parseFloat(document.getElementById('in-glucose').value);
+        if (!isNaN(g)) {
+          glucose = Math.round(g);
+          glucoseType = document.getElementById('in-glucose-type').value;
+        }
+      } else if (type === 'spo2') {
+        const o = parseInt(document.getElementById('in-spo2').value, 10);
+        if (!isNaN(o)) spo2 = o;
+        const p = parseInt(document.getElementById('in-spo2-pulse').value, 10);
+        if (!isNaN(p) && p > 0) pulse = p;
+      } else if (type === 'temp') {
+        const t = parseFloat(document.getElementById('in-temp').value);
+        if (!isNaN(t)) temp = parseFloat(t.toFixed(1));
+      } else if (type === 'waist') {
+        const ws = parseFloat(document.getElementById('in-waist').value);
+        if (!isNaN(ws)) waist = parseFloat(ws.toFixed(1));
+      }
+
+      const hasAny = (sys !== null && dia !== null) || pulse !== null || glucose !== null || weight !== null || spo2 !== null || temp !== null || waist !== null;
+      if (!hasAny) {
+        showToast('Please enter a measurement before saving');
+        return;
+      }
+
+      const tsVal = document.getElementById('in-timestamp').value;
+      const timestamp = tsVal ? new Date(tsVal).toISOString() : new Date().toISOString();
+      const medTiming = document.getElementById('in-med-context').value;
+      const notes = document.getElementById('in-notes').value.trim();
+
+      await dbAddVital({
+        profileId: Number(activeProfileId),
+        timestamp,
+        systolic: sys,
+        diastolic: dia,
+        pulse,
+        glucose,
+        glucoseType,
+        weight,
+        spo2,
+        temp,
+        waist,
+        medTiming,
+        notes
+      });
+
+      showToast('Measurement saved locally');
+      document.getElementById('btn-reset-form').click();
+      closeDrawer();
+      await refreshAllViews();
+    });
+
+    // Profile Management & Full Edit Capabilities
+    async function loadProfiles() {
+      profiles = await dbGetProfiles();
+      if (!profiles.length) {
+        await initDB();
+        profiles = await dbGetProfiles();
+      }
+      let active = profiles.find(p => Number(p.id) === Number(activeProfileId));
+      if (!active) {
+        active = profiles[0];
+        activeProfileId = active.id;
+        localStorage.setItem('vt_active_profile', activeProfileId);
+      }
+
+      if (active) {
+        document.getElementById('header-profile-name').textContent = active.name;
+        document.getElementById('header-avatar').textContent = active.name.slice(0, 1).toUpperCase();
+      }
+
+      const listDiv = document.getElementById('profile-list');
+      listDiv.innerHTML = profiles.map(p => `
+        <div class="w-full flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition ${p.id === activeProfileId ? 'bg-purple-50/80 border border-purple-200' : ''}">
+          <button onclick="switchProfile(${p.id})" class="flex-1 text-left flex items-center gap-2 truncate mr-1">
+            <span class="w-5 h-5 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+              ${p.name.slice(0, 1).toUpperCase()}
+            </span>
+            <div class="truncate">
+              <span class="text-xs font-bold ${p.id === activeProfileId ? 'text-purple-900 font-black' : 'text-slate-700'}">${p.name}</span>
+              <span class="text-[10px] text-slate-400 block">${p.relation || 'Member'} ${p.age ? '• ' + p.age + 'y' : ''}</span>
+            </div>
+          </button>
+          
+          <button onclick="openEditProfileModal(${p.id})" title="Edit Profile Details" class="p-1.5 rounded-lg text-purple-600 hover:bg-purple-100 transition active:scale-95 shrink-0">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function switchProfile(id) {
+      activeProfileId = Number(id);
+      localStorage.setItem('vt_active_profile', activeProfileId);
+      document.getElementById('profile-dropdown').classList.add('hidden');
+      loadProfiles();
+      refreshAllViews();
+    }
+
+    // Open Edit Profile Modal
+    window.openEditProfileModal = function(id) {
+      const targetId = id || activeProfileId;
+      const p = profiles.find(item => Number(item.id) === Number(targetId));
+      if (!p) return;
+
+      document.getElementById('profile-dropdown').classList.add('hidden');
+      document.getElementById('edit-prof-id').value = p.id;
+      document.getElementById('edit-prof-name').value = p.name || '';
+      document.getElementById('edit-prof-rel').value = p.relation || 'Self';
+      document.getElementById('edit-prof-gender').value = p.gender || 'Male';
+      document.getElementById('edit-prof-age').value = p.age || '';
+      document.getElementById('edit-prof-dob').value = p.dob || '';
+      document.getElementById('edit-prof-condition').value = p.condition || '';
+      document.getElementById('edit-prof-meds').value = p.medications || '';
+      document.getElementById('edit-prof-bptarget').value = p.bpTarget || '< 130/80 mmHg';
+      document.getElementById('edit-prof-bg').value = p.bloodGroup || '';
+      document.getElementById('edit-prof-notes').value = p.notes || '';
+
+      const delBtn = document.getElementById('btn-delete-profile-entry');
+      // If it's the only profile, hide delete button for data safety
+      if (profiles.length <= 1) {
+        delBtn.classList.add('hidden');
+      } else {
+        delBtn.classList.remove('hidden');
+      }
+
+      document.getElementById('modal-edit-profile').classList.remove('hidden');
+    };
+
+    // Calculate age automatically if DOB is changed
+    document.getElementById('edit-prof-dob').addEventListener('change', (e) => {
+      if (e.target.value) {
+        const birthDate = new Date(e.target.value);
+        const diff = Date.now() - birthDate.getTime();
+        const ageDate = new Date(diff);
+        const calculatedAge = Math.abs(ageDate.getUTCFullYear() - 1970);
+        if (!isNaN(calculatedAge) && calculatedAge >= 0) {
+          document.getElementById('edit-prof-age').value = calculatedAge;
+        }
+      }
+    });
+
+    document.getElementById('btn-close-edit-prof-modal').addEventListener('click', () => {
+      document.getElementById('modal-edit-profile').classList.add('hidden');
+    });
+
+    // Save Edited Profile
+    document.getElementById('form-edit-profile').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = Number(document.getElementById('edit-prof-id').value);
+      const existing = profiles.find(p => Number(p.id) === id) || {};
+
+      const updated = {
+        ...existing,
+        id,
+        name: document.getElementById('edit-prof-name').value.trim() || 'User',
+        relation: document.getElementById('edit-prof-rel').value,
+        gender: document.getElementById('edit-prof-gender').value,
+        age: parseInt(document.getElementById('edit-prof-age').value, 10) || null,
+        dob: document.getElementById('edit-prof-dob').value,
+        condition: document.getElementById('edit-prof-condition').value.trim(),
+        medications: document.getElementById('edit-prof-meds').value.trim(),
+        bpTarget: document.getElementById('edit-prof-bptarget').value.trim() || '< 130/80 mmHg',
+        bloodGroup: document.getElementById('edit-prof-bg').value,
+        notes: document.getElementById('edit-prof-notes').value.trim(),
+        updated_at: new Date().toISOString()
+      };
+
+      await dbUpdateProfile(updated);
+      document.getElementById('modal-edit-profile').classList.add('hidden');
+      showToast(`Profile updated: ${updated.name}`);
+      await loadProfiles();
+      await refreshAllViews();
+    });
+
+    // Delete Profile Action
+    document.getElementById('btn-delete-profile-entry').addEventListener('click', async () => {
+      const id = Number(document.getElementById('edit-prof-id').value);
+      const target = profiles.find(p => Number(p.id) === id);
+      if (!target) return;
+
+      if (profiles.length <= 1) {
+        showToast('Cannot delete the only remaining profile');
+        return;
+      }
+
+      await dbDeleteProfile(id);
+      document.getElementById('modal-edit-profile').classList.add('hidden');
+      showToast(`Profile deleted: ${target.name}`);
+
+      profiles = await dbGetProfiles();
+      activeProfileId = profiles[0].id;
+      localStorage.setItem('vt_active_profile', activeProfileId);
+      await loadProfiles();
+      await refreshAllViews();
+    });
+
+    // Profile Trigger Buttons
+    document.getElementById('btn-profile-toggle').addEventListener('click', () => {
+      document.getElementById('profile-dropdown').classList.toggle('hidden');
+    });
+
+    document.getElementById('btn-quick-edit-active-profile').addEventListener('click', () => {
+      openEditProfileModal(activeProfileId);
+    });
+
+    document.getElementById('btn-dash-edit-profile').addEventListener('click', () => {
+      openEditProfileModal(activeProfileId);
+    });
+
+    document.getElementById('btn-doc-edit-profile').addEventListener('click', () => {
+      openEditProfileModal(activeProfileId);
+    });
+
+    document.getElementById('btn-open-add-profile').addEventListener('click', () => {
+      document.getElementById('profile-dropdown').classList.add('hidden');
+      document.getElementById('modal-add-profile').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-prof-modal').addEventListener('click', () => {
+      document.getElementById('modal-add-profile').classList.add('hidden');
+    });
+
+    document.getElementById('form-create-profile').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('prof-input-name').value.trim();
+      const relation = document.getElementById('prof-input-rel').value;
+      const age = parseInt(document.getElementById('prof-input-age').value, 10) || null;
+      const note = document.getElementById('prof-input-note').value.trim();
+
+      const newId = await dbAddProfile({
+        name,
+        relation,
+        gender: 'Not specified',
+        age,
+        dob: '',
+        condition: note,
+        medications: '',
+        bpTarget: '< 130/80 mmHg',
+        bloodGroup: '',
+        notes: '',
+        created_at: new Date().toISOString()
+      });
+
+      document.getElementById('form-create-profile').reset();
+      document.getElementById('modal-add-profile').classList.add('hidden');
+      showToast(`Profile created: ${name}`);
+      switchProfile(newId);
+    });
+
+    async function handleDelete(id) {
+      await dbDeleteVital(id);
+      showToast('Entry removed.');
+      await refreshAllViews();
+    }
+
+    // CSV Export
+    document.getElementById('btn-export-csv').addEventListener('click', async () => {
+      const records = await dbGetVitals(activeProfileId);
+      if (!records.length) { showToast('No records to export'); return; }
+
+      const active = profiles.find(p => p.id === activeProfileId) || { name: 'Demo' };
+      let csv = "Patient,Relationship,Age,Date,Time,Systolic(mmHg),Diastolic(mmHg),Pulse(bpm),Glucose(mg/dL),Glucose_Context,Weight(kg),SpO2(%),Temp(F),Waist(cm),Medication_Timing,Notes\r\n";
+      records.forEach(r => {
+        const d = new Date(r.timestamp);
+        const dateStr = d.toISOString().split('T')[0];
+        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        csv += `"${active.name}","${active.relation || ''}","${active.age || ''}","${dateStr}","${timeStr}",${r.systolic || ''},${r.diastolic || ''},${r.pulse || ''},${r.glucose || ''},"${r.glucoseType || ''}",${r.weight || ''},${r.spo2 || ''},${r.temp || ''},${r.waist || ''},"${r.medTiming || ''}","${(r.notes || '').replace(/"/g, '""')}"\r\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vitals_tracker_${active.name}_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      showToast('CSV downloaded');
+    });
+
+    // JSON Backup
+    document.getElementById('btn-backup-json').addEventListener('click', async () => {
+      const allVitals = await dbGetVitals(null);
+      const allProfiles = await dbGetProfiles();
+      const backup = {
+        app: "Vitals Tracker",
+        version: "5.1",
+        exportDate: new Date().toISOString(),
+        profiles: allProfiles,
+        vitals: allVitals
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vitals_tracker_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      showToast('JSON Backup downloaded');
+    });
+
+    // JSON Restore
+    document.getElementById('input-restore-json').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data.vitals && Array.isArray(data.vitals)) {
+            const db = await initDB();
+            const tx = db.transaction([STORE_PROFILES, STORE_VITALS], 'readwrite');
+            if (data.profiles) data.profiles.forEach(p => tx.objectStore(STORE_PROFILES).put(p));
+            data.vitals.forEach(v => tx.objectStore(STORE_VITALS).put(v));
+            tx.oncomplete = async () => {
+              showToast('Backup restored successfully!');
+              await loadProfiles();
+              await refreshAllViews();
+            };
+          } else {
+            showToast('Invalid backup file');
+          }
+        } catch (err) {
+          showToast('Failed to parse file');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // History filter buttons
+    document.querySelectorAll('.hist-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentHistoryFilter = btn.getAttribute('data-f');
+        document.querySelectorAll('.hist-filter').forEach(b => {
+          b.className = 'hist-filter px-3 py-1 rounded-lg text-slate-600';
+        });
+        btn.className = 'hist-filter px-3 py-1 rounded-lg range-pill-active';
+        refreshAllViews();
+      });
+    });
+
+    // Reactive Trends Range Event Handlers
+    function setupRangeButtonGroup(selectorClass, updateCallback) {
+      document.querySelectorAll(selectorClass).forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const parent = btn.parentElement;
+          parent.querySelectorAll('button').forEach(b => {
+            b.classList.remove('range-pill-active');
+            b.classList.add('text-slate-600');
+          });
+          btn.classList.remove('text-slate-600');
+          btn.classList.add('range-pill-active');
+          const rangeVal = btn.getAttribute('data-range');
+          updateCallback(rangeVal);
+          const records = await dbGetVitals(activeProfileId);
+          renderAllCharts(records);
+        });
+      });
+    }
+
+    setupRangeButtonGroup('.trend-bp-btn', (val) => { trendBpRange = val; });
+    setupRangeButtonGroup('.trend-gluc-btn', (val) => { trendGlucRange = val; });
+    setupRangeButtonGroup('.trend-weight-btn', (val) => { trendWeightRange = val; });
+    setupRangeButtonGroup('.trend-pulse-btn', (val) => { trendPulseRange = val; });
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', async () => {
+      const saved = localStorage.getItem('vt_active_profile');
+      if (saved) activeProfileId = Number(saved);
+      syncFormDateTimeToNow();
+      await loadProfiles();
+      await seedDemoDataIfEmpty();
+      await refreshAllViews();
+    });
+
+    // Offline Service Worker
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', e => self.skipWaiting());
+        self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+        self.addEventListener('fetch', e => {
+          e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./'))));
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'text/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob), { scope: './' }).catch(() => {});
+    }
+  </script>
+</body>
+</html>
