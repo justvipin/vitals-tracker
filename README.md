@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/badge/version-v6.3-purple.svg)](./vitals_tracker_light_pwa.html)
 [![Platform](https://img.shields.io/badge/platform-PWA%20%7C%20Web-blue.svg)](./index.html)
-[![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20First-success.svg)](./GEMINI.md)
+[![Privacy](https://img.shields.io/badge/privacy-100%25%20Offline%20First-success.svg)](#-key-features)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 **Vitals Tracker** is a private, offline-first personal health vitals monitoring application designed to record, analyze, and visualize daily cardiovascular, metabolic, and physical metrics.
