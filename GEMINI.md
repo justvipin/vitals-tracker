@@ -31,12 +31,12 @@ The primary clinical focus is **hypertension and metabolic monitoring**, featuri
 - **Clinical Rigor & Senior-Friendly UX:**
   - Standardized blood pressure classification (AHA/ACC 2017).
   - High contrast, legible typography, large touch targets (min 48×48 dp/pt), and quick-entry drawer flows.
-- **HealthLog-Aligned UI Architecture & Component Hierarchy:**
+- **HealthLog-Aligned UI Architecture & Component Hierarchy (v6.3):**
   - The UI layout, information architecture, and visual hierarchy directly reflect streamlined clinical and daily tracking patterns:
-    1. **Today's Action Strip ("Medication Quick-Add"):** Top-priority daily dose checklist on the home screen featuring a 1-hour pre-dose appearance window. Doses only appear 1 hour before scheduled intake (or when overdue), and automatically dismiss upon being marked as `Taken` or `Skipped` with full undo support and real-time adherence scoring.
-    2. **Metric Tiles with 7-Day Sparkline Trends:** Clean, rounded cards for each vital displaying latest value, unit, timestamp, clinical category badge, and an inline SVG mini trend line.
-    3. **Log Chooser Drawer ("What would you like to record?"):** HealthLog-aligned capture picker offering targeted quick-entry flows for **Measurement** (7 vitals), **Medication** (dose intake logging), and **Mood** (5-level score, energy state, and context tags). Context-sensitive `medTiming` remains strictly filtered to BP & Glucose.
-    4. **Multi-Range Trends View:** Deep-dive tabs (7d, 14d, 30d, 90d, All) featuring clinical reference bands (Normal, Elevated, Stage 1/2) shaded behind trend charts.
+    1. **Dedicated Medications Tab ("Medications, schedules & intake"):** Prominently accessible via the Pill dock icon matching HealthLog Screenshot 1. Features comprehensive prescription cards displaying dosage badges, `Next intake` status (with 1-hour pre-dose appearance window), `Last intake` timestamp, dual progress bars for `Adherence (7 days)` and `Adherence (30 days)`, streak tracking (`🔥 X day streak`), and rapid intake actions (`✓ Taken` and `⏭ Skipped`) with instant Undo support.
+    2. **Dynamic Vital Metric Tiles (2-Column Grid):** HealthLog-styled cards for all 8 metrics enterable via `+` button (`WEIGHT`, `BP (SYS)`, `BP (DIA)`, `RESTING HEART RATE`, `BLOOD GLUCOSE`, `OXYGEN SATURATION`, `BODY TEMPERATURE`, `WAIST CIRCUMFERENCE`). Each card displays latest value, unit, clinical trend arrow (`↑`/`↓`/`→`), 7-day trend average + delta, and 30-day baseline. **Dynamic Recency Sorting:** The tile with the most recently updated reading always appears at the top of the grid.
+    3. **Dashboard Reading Trends / Graphs:** Positioned directly after the vital metric tiles on the home screen (matching HealthLog Screenshot 3), offering interactive timeline charts for Weight, Blood Pressure, Resting Pulse, and Blood Glucose across 7d, 30d, 90d, and All ranges.
+    4. **Log Chooser Drawer ("What would you like to record?"):** HealthLog-aligned capture picker offering targeted quick-entry flows for **Measurement** (8 vitals), **Medication** (dose intake logging), and **Mood** (5-level score, energy state, and context tags). Context-sensitive `medTiming` remains strictly filtered to BP & Glucose.
     5. **Physician Consultation Sheet:** High-contrast, tabular clinical summary ready for A4/Letter print or PDF export.
 - **Continuous App Versioning & Rollback Protocol:**
   - The active app version must always be displayed visibly at the bottom of the page (footer).

@@ -1,0 +1,3410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Vitals Tracker v6.3</title>
+
+  <!-- PWA & Mobile Web Tags (Light Theme) -->
+  <meta name="theme-color" content="#FFFFFF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Vitals Tracker" />
+  <meta name="description" content="Offline-first personal health vitals & hypertension monitoring application with medication compliance tracking." />
+
+  <!-- Inline Web App Manifest with Data URI Icons -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Vitals%20Tracker%22%2C%22short_name%22%3A%22Vitals%22%2C%22start_url%22%3A%22.%2F%22%2C%22scope%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FFFFFF%22%2C%22theme_color%22%3A%22%23FFFFFF%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20192%20192%27%253E%253Crect%20width%3D%27192%27%20height%3D%27192%27%20rx%3D%2740%27%20fill%3D%27%23F3E8FF%27%2F%253E%253Cpath%20d%3D%27M36%2096h28l16-36%2024%2072%2020-48%2016%2020h20%27%20stroke%3D%27%239061F9%27%20stroke-width%3D%2714%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20fill%3D%27none%27%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            hl: {
+              bg: '#FFFFFF',
+              card: '#F8FAFC',
+              border: '#E2E8F0',
+              lilac: '#B18AFF',
+              lilacHover: '#9F75FF',
+              lilacText: '#7E22CE',
+              lilacBg: '#F3E8FF',
+              neonGreen: '#10B981',
+              cyan: '#0284C7',
+              pink: '#E11D48',
+              slateInput: '#F1F5F9',
+              textMain: '#0F172A',
+              textMuted: '#64748B'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #FFFFFF;
+      color: #0F172A;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+      overscroll-behavior-y: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    .pb-safe-dock {
+      padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 5.5rem);
+    }
+    .pt-safe-top {
+      padding-top: max(env(safe-area-inset-top, 0px), 12px);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .hl-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 24px;
+      box-shadow: 0 1px 8px rgba(15, 23, 42, 0.04);
+    }
+    .hl-metric-card {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 20px;
+    }
+
+    /* Modal / Bottom Drawer Animation */
+    .drawer-transition {
+      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease;
+    }
+    .drawer-hidden {
+      transform: translateY(100%);
+      pointer-events: none;
+    }
+    .drawer-visible {
+      transform: translateY(0%);
+    }
+
+    /* Range Pill Active Style */
+    .range-pill-active {
+      background-color: #B18AFF !important;
+      color: #FFFFFF !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 6px rgba(177, 138, 255, 0.4);
+    }
+
+    .hl-form-input {
+      width: 100%;
+      background-color: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 14px;
+      padding: 13px 15px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #0F172A;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .hl-form-input:focus {
+      background-color: #FFFFFF;
+      border-color: #B18AFF;
+      box-shadow: 0 0 0 3px rgba(177, 138, 255, 0.15);
+    }
+    .hl-form-input::placeholder {
+      color: #94A3B8;
+      font-weight: 400;
+    }
+
+    @media print {
+      body * { visibility: hidden !important; }
+      #printable-doctor-summary, #printable-doctor-summary * { visibility: visible !important; }
+      #printable-doctor-summary {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #FFFFFF !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-white text-hl-textMain min-h-screen flex flex-col select-none antialiased">
+
+  <!-- ========================================== -->
+  <!-- 1. PROFILE-FIRST GATED ENTRY SCREEN MODAL -->
+  <!-- ========================================== -->
+  <div id="profile-gate-screen" class="fixed inset-0 z-50 bg-white flex flex-col justify-between p-6 overflow-y-auto transition-opacity duration-300">
+    <div class="max-w-md w-full mx-auto space-y-6 pt-4">
+      
+      <!-- Brand & Welcome -->
+      <div class="text-center space-y-2">
+        <div class="w-16 h-16 rounded-3xl bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-600 mx-auto shadow-md">
+          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6.5 1.5-3.5h6.28"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-slate-900">Vitals Tracker</h1>
+        <p class="text-xs text-slate-500 font-medium">Select a profile to continue or create a new family record</p>
+      </div>
+
+      <!-- Profile Cards Grid -->
+      <div class="space-y-3 pt-2">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Available Profiles</span>
+          <span id="gate-profiles-count" class="text-xs font-bold text-purple-600">-- Profiles</span>
+        </div>
+        <div id="gate-profile-cards" class="space-y-2.5">
+          <!-- Dynamically populated profile selection cards -->
+        </div>
+
+        <button id="btn-gate-create-profile" class="w-full py-3.5 px-4 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-sm flex items-center justify-center gap-2 border border-purple-200 transition active:scale-98">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New Profile
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Security & Offline Badge Footer -->
+    <div class="max-w-md w-full mx-auto text-center pt-8 pb-4">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold">
+        <svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        100% Offline • Zero Cloud Telemetry
+      </div>
+      <p class="text-[10px] text-slate-400 mt-2">Vitals Tracker v6.0</p>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. MAIN APPLICATION TOP HEADER -->
+  <!-- ========================================== -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-hl-border px-4 py-3 pt-safe-top">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M3.22 12H9.5l1.5-3 2 6.5 1.5-3.5h6.28"/>
+          </svg>
+        </div>
+        <span class="text-base font-black tracking-tight text-slate-900">Vitals Tracker</span>
+      </div>
+
+      <!-- Active Profile Pill + Log Out / Switch Button -->
+      <div class="flex items-center gap-1.5">
+        
+        <!-- Profile Avatar & Name Pill -->
+        <button id="btn-header-profile-menu" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 hover:border-purple-300 transition active:scale-98">
+          <div id="header-avatar" class="w-5 h-5 rounded-full bg-purple-600 text-white font-black text-[10px] flex items-center justify-center uppercase shadow-sm">
+            D
+          </div>
+          <span id="header-profile-name" class="text-xs font-bold text-slate-700 max-w-[80px] truncate">Demo</span>
+        </button>
+
+        <!-- Log Out / Switch Profile Trigger -->
+        <button id="btn-logout-profile" title="Switch Profile / Log Out" class="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 transition active:scale-95 flex items-center justify-center">
+          <svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 3. MAIN BODY TABS VIEWPORT -->
+  <!-- ========================================== -->
+  <main class="flex-1 max-w-md w-full mx-auto px-4 pt-3 pb-safe-dock">
+
+    <!-- ─── TAB 1: DASHBOARD (HealthLog Structure) ─── -->
+    <section id="tab-dashboard" class="space-y-4">
+      
+      <!-- Dashboard Top Header Bar -->
+      <div class="flex items-center justify-between pt-1">
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-1.5">
+            Dashboard
+            <span class="text-purple-500 text-sm">✦</span>
+          </h1>
+          <p id="dash-greeting-sub" class="text-xs text-hl-textMuted font-medium">Hello, welcome back.</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button id="btn-dash-add-shortcut" class="py-1.5 px-3 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition shadow-sm">
+            <svg class="w-3.5 h-3.5 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Vital Metric Tiles (2-Column Grid matching Screenshot 2, sorted dynamically by latest updated reading) -->
+      <div id="dash-vital-tiles-grid" class="grid grid-cols-2 gap-3">
+        <!-- Rendered dynamically via renderDashboardVitalTiles() -->
+      </div>
+
+      <!-- 7-Day AM/PM Blood Pressure Summary Tiles & Morning Surge Alert -->
+      <div class="space-y-2">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="hl-metric-card p-3 space-y-1 bg-slate-50 border border-slate-200 rounded-2xl">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold tracking-wider uppercase text-slate-500">7D AM Window</span>
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            </div>
+            <div id="dash-7d-am-val" class="text-lg font-black text-slate-900">-- / --</div>
+            <div id="dash-7d-am-sub" class="text-[10px] text-slate-500 font-medium">Trough before meds</div>
+          </div>
+
+          <div class="hl-metric-card p-3 space-y-1 bg-slate-50 border border-slate-200 rounded-2xl">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold tracking-wider uppercase text-slate-500">7D PM Window</span>
+              <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+            </div>
+            <div id="dash-7d-pm-val" class="text-lg font-black text-slate-900">-- / --</div>
+            <div id="dash-7d-pm-sub" class="text-[10px] text-slate-500 font-medium">Evening check</div>
+          </div>
+        </div>
+
+        <!-- Dynamic Morning Surge Alert Banner -->
+        <div id="morning-surge-alert" class="hidden p-3 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-center gap-2">
+          <span class="text-base">⚠️</span>
+          <div>
+            <span class="font-bold">Morning Surge Differential Alert:</span>
+            <span id="morning-surge-text" class="block text-[11px] text-amber-800 mt-0.5">AM Systolic is higher than PM by > 20 mmHg.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Individual Reading Trends / Graphs (matching Screenshot 3, appearing after tiles) -->
+      <div class="space-y-4 pt-1" id="dash-graphs-section">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-black text-slate-900 flex items-center gap-1.5">
+            Reading Trends
+            <span class="text-purple-600 text-xs font-bold">📈</span>
+          </h2>
+          <span class="text-[11px] text-slate-400 font-semibold">Interactive timeline</span>
+        </div>
+
+        <!-- Graph 1: Weight & Anthropometrics Card -->
+        <div class="hl-card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900">Weight</h3>
+              <span class="text-[10px] text-slate-400 font-medium">Metric kg</span>
+            </div>
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+              <button class="trend-weight-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="7">7d</button>
+              <button class="trend-weight-btn px-2 py-0.5 rounded-lg range-pill-active" data-range="30">30d</button>
+              <button class="trend-weight-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="90">90d</button>
+              <button class="trend-weight-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="all">All</button>
+            </div>
+          </div>
+          <div id="chart-weight-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+          <div id="weight-stats-card" class="p-2.5 rounded-xl bg-purple-50/50 border border-purple-100 flex items-center justify-between text-xs">
+            <span class="text-purple-900 font-bold">Weight Movement:</span>
+            <span id="weight-stat-delta" class="font-black text-purple-700">-- kg</span>
+          </div>
+        </div>
+
+        <!-- Graph 2: Blood Pressure (AHA/ACC) Card -->
+        <div class="hl-card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900">Blood Pressure (AHA/ACC)</h3>
+              <span class="text-[10px] text-slate-400 font-medium">Systolic & Diastolic mmHg</span>
+            </div>
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+              <button class="trend-bp-btn px-2 py-0.5 rounded-lg text-slate-600 transition" data-range="7">7d</button>
+              <button class="trend-bp-btn px-2 py-0.5 rounded-lg text-slate-600 transition" data-range="30">30d</button>
+              <button class="trend-bp-btn px-2 py-0.5 rounded-lg text-slate-600 transition" data-range="90">90d</button>
+              <button class="trend-bp-btn px-2 py-0.5 rounded-lg range-pill-active transition" data-range="all">All</button>
+            </div>
+          </div>
+          <div id="chart-bp-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+          <div id="bp-stats-card" class="p-3 rounded-xl bg-purple-50/50 border border-purple-100 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between text-[11px] text-slate-500">
+              <span id="bp-stat-summary">Range Summary</span>
+              <span id="bp-stat-target-badge" class="text-emerald-600 font-bold">--% In Target</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-1.5 font-bold text-slate-700">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Systolic Avg
+              </span>
+              <span id="bp-stat-sys-avg" class="font-extrabold text-slate-900">-- mmHg</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="flex items-center gap-1.5 font-bold text-slate-700">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Diastolic Avg
+              </span>
+              <span id="bp-stat-dia-avg" class="font-extrabold text-slate-900">-- mmHg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Graph 3: Resting Pulse Card -->
+        <div class="hl-card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900">Resting Pulse</h3>
+              <span class="text-[10px] text-slate-400 font-medium">Cardiac bpm</span>
+            </div>
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+              <button class="trend-pulse-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="7">7d</button>
+              <button class="trend-pulse-btn px-2 py-0.5 rounded-lg range-pill-active" data-range="30">30d</button>
+              <button class="trend-pulse-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="90">90d</button>
+              <button class="trend-pulse-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="all">All</button>
+            </div>
+          </div>
+          <div id="chart-pulse-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+        </div>
+
+        <!-- Graph 4: Blood Glucose Card -->
+        <div class="hl-card p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900">Blood Glucose</h3>
+              <span class="text-[10px] text-slate-400 font-medium">Fasting & Post-Meal mg/dL</span>
+            </div>
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+              <button class="trend-gluc-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="7">7d</button>
+              <button class="trend-gluc-btn px-2 py-0.5 rounded-lg range-pill-active" data-range="30">30d</button>
+              <button class="trend-gluc-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="90">90d</button>
+              <button class="trend-gluc-btn px-2 py-0.5 rounded-lg text-slate-600" data-range="all">All</button>
+            </div>
+          </div>
+          <div id="chart-gluc-container" class="relative bg-slate-50/80 rounded-2xl p-2 border border-slate-200"></div>
+          <div id="gluc-stats-card" class="p-2.5 rounded-xl bg-teal-50/50 border border-teal-100 flex items-center justify-between text-xs">
+            <span class="text-teal-900 font-bold">Average Glycemia:</span>
+            <span id="gluc-stat-avg" class="font-black text-teal-700">-- mg/dL</span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ─── TAB 2: MEDICATIONS (Dedicated Tab Matching Screenshot 1) ─── -->
+    <section id="tab-medications" class="hidden space-y-4">
+      
+      <!-- Medications Header Bar -->
+      <div class="flex items-center justify-between pt-1">
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-1.5">
+            Medications
+            <span class="text-purple-500 text-sm">💊</span>
+          </h1>
+          <p class="text-xs text-hl-textMuted font-medium">Medications, schedules & intake</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button id="btn-med-tab-manage" class="py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 active:scale-95 transition border border-slate-200" title="Manage Prescriptions">
+            <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Manage
+          </button>
+          <button id="btn-med-tab-add" class="py-1.5 px-3 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition shadow-sm">
+            <svg class="w-3.5 h-3.5 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Medications Cards Container (Populated via renderMedicationsTab) -->
+      <div id="med-tab-cards-container" class="space-y-3">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </section>
+
+
+
+    <!-- ─── TAB 3: HISTORY (Chronological Journal) ─── -->
+    <section id="tab-history" class="hidden space-y-3">
+      <div class="flex items-center justify-between pt-1">
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900">History</h1>
+          <p class="text-xs text-hl-textMuted font-medium">Chronological audit ledger</p>
+        </div>
+        <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+          <button class="hist-filter px-2.5 py-1 rounded-lg range-pill-active" data-f="all">All</button>
+          <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="bp">BP</button>
+          <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="glucose">Sugar</button>
+          <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="meds">Meds</button>
+          <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="mood">Mood</button>
+        </div>
+      </div>
+      <div id="history-feed" class="space-y-2.5 pt-1"></div>
+    </section>
+
+    <!-- ─── TAB 4: DOCTOR CONSULTATION & REPORT ─── -->
+    <section id="tab-doctor" class="hidden space-y-4 pb-20">
+      
+      <!-- High-Resolution Printable Consultation Sheet -->
+      <div id="printable-doctor-summary" class="hl-card p-5 space-y-4">
+        
+        <!-- Sheet Header -->
+        <div class="flex items-start justify-between border-b border-slate-200 pb-3">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-extrabold uppercase tracking-wider mb-1">
+              Physician Consultation Report
+            </div>
+            <h2 id="doc-patient-name" class="text-xl font-black text-slate-900">Patient: Demo</h2>
+            <p id="doc-patient-details" class="text-xs text-slate-500 font-medium">Age 40 • Male • Conditions: Hypertension</p>
+          </div>
+          
+          <div class="flex items-center gap-2 no-print">
+            <select id="doc-range-select" class="bg-slate-100 border border-slate-200 text-xs font-bold rounded-xl px-2.5 py-2 text-slate-800">
+              <option value="7">Last 7 Days</option>
+              <option value="14">Last 14 Days</option>
+              <option value="30" selected>Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+            </select>
+            <button onclick="window.print()" class="py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-sm">
+              <svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+              Print / PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- 1. Blood Pressure Overview (AM vs PM & Surge Delta) -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+              <span>🫀</span> Cardiovascular Telemetry & AM/PM Segregation
+            </h3>
+            <span id="doc-bp-overall-badge" class="px-2 py-0.5 rounded-md text-xs font-extrabold bg-purple-100 text-purple-800">
+              Avg: -- / -- mmHg
+            </span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-[9px] font-extrabold uppercase text-amber-700 block">Morning AM (Trough)</span>
+              <span id="doc-am-avg-val" class="text-base font-black text-slate-900">-- / --</span>
+              <span id="doc-am-count" class="text-[9px] text-slate-400 block">0 readings</span>
+            </div>
+            <div class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-[9px] font-extrabold uppercase text-purple-700 block">Evening PM</span>
+              <span id="doc-pm-avg-val" class="text-base font-black text-slate-900">-- / --</span>
+              <span id="doc-pm-count" class="text-[9px] text-slate-400 block">0 readings</span>
+            </div>
+            <div class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-xs">
+              <span class="text-[9px] font-extrabold uppercase text-slate-500 block">Morning Surge (Δ)</span>
+              <span id="doc-surge-val" class="text-base font-black text-slate-900">-- mmHg</span>
+              <span id="doc-surge-status" class="text-[9px] font-bold text-emerald-600 block">Normal</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Hypertension Stage Distribution Breakdown -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-800">
+              AHA/ACC 2017 Blood Pressure Stage Distribution
+            </h3>
+            <span id="doc-total-readings-count" class="text-[11px] font-bold text-slate-500">0 Total Readings</span>
+          </div>
+
+          <!-- Composite Stacked Distribution Bar -->
+          <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden flex" id="doc-stage-progress-bar">
+            <div id="bar-stage-normal" style="width: 0%" class="bg-emerald-500 h-full" title="Normal"></div>
+            <div id="bar-stage-elevated" style="width: 0%" class="bg-yellow-400 h-full" title="Elevated"></div>
+            <div id="bar-stage-stg1" style="width: 0%" class="bg-orange-500 h-full" title="Stage 1"></div>
+            <div id="bar-stage-stg2" style="width: 0%" class="bg-rose-500 h-full" title="Stage 2"></div>
+            <div id="bar-stage-crisis" style="width: 0%" class="bg-red-700 h-full" title="Crisis"></div>
+          </div>
+
+          <!-- Distribution Percentages Legend -->
+          <div class="grid grid-cols-5 gap-1 text-center text-[10px] font-bold pt-1">
+            <div class="text-emerald-700"><span id="pct-normal">0%</span> Normal</div>
+            <div class="text-yellow-700"><span id="pct-elevated">0%</span> Elev</div>
+            <div class="text-orange-700"><span id="pct-stg1">0%</span> Stg 1</div>
+            <div class="text-rose-700"><span id="pct-stg2">0%</span> Stg 2</div>
+            <div class="text-red-800"><span id="pct-crisis">0%</span> Crisis</div>
+          </div>
+        </div>
+
+        <!-- 3. Prescribed Medication Regimen & Compliance Score -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+              <span>💊</span> Prescribed Medication Regimen & Adherence
+            </h3>
+            <span id="doc-compliance-rate-badge" class="px-2 py-0.5 rounded-md text-xs font-extrabold bg-emerald-100 text-emerald-800">
+              --% Adherence
+            </span>
+          </div>
+
+          <div id="doc-medications-table-container">
+            <!-- Table dynamically populated with medications & adherence rates -->
+          </div>
+        </div>
+
+        <!-- 4. Metabolic & Body Snapshot -->
+        <div class="grid grid-cols-3 gap-2">
+          <div class="p-3 bg-teal-50/50 border border-teal-200/80 rounded-xl text-center">
+            <span class="text-[9px] font-extrabold uppercase text-teal-800 block">Fasting Glucose</span>
+            <span id="doc-gluc-fast-snap" class="text-base font-black text-teal-900">-- mg/dL</span>
+          </div>
+          <div class="p-3 bg-teal-50/50 border border-teal-200/80 rounded-xl text-center">
+            <span class="text-[9px] font-extrabold uppercase text-emerald-800 block">Post-Meal Glucose</span>
+            <span id="doc-gluc-pp-snap" class="text-base font-black text-emerald-900">-- mg/dL</span>
+          </div>
+          <div class="p-3 bg-purple-50/50 border border-purple-200/80 rounded-xl text-center">
+            <span class="text-[9px] font-extrabold uppercase text-purple-800 block">Weight & SpO2</span>
+            <span id="doc-weight-spo2-snap" class="text-xs font-black text-purple-900">-- kg • --%</span>
+          </div>
+        </div>
+
+        <!-- 5. Clinical Observations & Notes -->
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+          <span class="font-bold text-slate-700 block">Physician Notes / Registered Conditions:</span>
+          <p id="doc-notes-text" class="text-slate-600 italic">No notes provided.</p>
+        </div>
+
+        <!-- Mandatory Enforced Medical Disclaimer -->
+        <div class="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-[10px] text-slate-500 leading-relaxed text-center">
+          <strong>Clinical Disclaimer:</strong> This application is for personal tracking and informational review only. It is not a substitute for professional medical advice, diagnosis, or treatment.
+        </div>
+
+      </div>
+
+      <!-- Backup, Restore & CSV Actions (Hidden on Print) -->
+      <div class="hl-card p-4 space-y-3 no-print">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+          <div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-900">Data Management & Privacy</h3>
+            <p class="text-[11px] text-slate-500">100% offline • Stored locally in IndexedDB</p>
+          </div>
+          <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Local Only</span>
+        </div>
+
+        <button id="btn-export-csv" class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 active:scale-98 transition shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Records as CSV (Excel)
+        </button>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="btn-backup-json" class="py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-200 transition active:scale-95 shadow-sm">
+            <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Backup JSON (v6.3)
+          </button>
+
+          <label class="py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-200 transition active:scale-95 cursor-pointer text-center shadow-sm">
+            <svg class="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Restore JSON
+            <input type="file" id="input-restore-json" accept=".json" class="hidden" />
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 4. BOTTOM FLOATING NAVIGATION DOCK -->
+  <!-- ========================================== -->
+  <div class="fixed bottom-0 inset-x-0 z-40 max-w-md mx-auto pointer-events-none pb-3 px-4 no-print">
+    <div class="pointer-events-auto bg-white/95 backdrop-blur-xl border border-slate-200 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.08)] px-4 py-2 flex items-center justify-between">
+      
+      <!-- Tab 1: Dashboard -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-purple-600 font-extrabold" data-tab="tab-dashboard" title="Dashboard">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+
+      <!-- Tab 2: Medications (Pill icon matching Screenshot 1) -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600" data-tab="tab-medications" title="Medications">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+      </button>
+
+      <!-- Center Elevated (+) Action Button -->
+      <div class="relative -top-4 flex items-center justify-center">
+        <button id="btn-open-log-drawer" class="w-14 h-14 rounded-full bg-[#B18AFF] hover:bg-[#9F75FF] text-white flex items-center justify-center shadow-[0_4px_18px_rgba(177,138,255,0.45)] active:scale-95 transition border-4 border-white" title="Add Entry">
+          <svg class="w-6 h-6 stroke-[3.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <!-- Tab 3: History -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600" data-tab="tab-history" title="History">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+      </button>
+
+      <!-- Tab 4: Doctor Report -->
+      <button class="nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600" data-tab="tab-doctor" title="Doctor Report">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Continuous App Version Display in Footer -->
+  <footer class="text-center py-2 text-[11px] font-semibold text-slate-400 no-print">
+    Vitals Tracker <span class="text-purple-600 font-extrabold">v6.3</span> • Local-First Offline Health Monitoring
+  </footer>
+
+    <!-- ========================================== -->
+  <!-- 5. BACKDROP & SLIDE-OVER DRAWERS -->
+  <!-- ========================================== -->
+  <div id="drawer-backdrop" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-200 opacity-0 pointer-events-none no-print"></div>
+
+  <!-- 5A. HEALTHLOG "LOG" CAPTURE PICKER DRAWER -->
+  <div id="modal-log-picker" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col no-print">
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 tracking-tight">Log</h3>
+        <p class="text-xs text-slate-500 font-medium">What would you like to record?</p>
+      </div>
+      <button id="btn-close-log-picker" type="button" class="cursor-pointer p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition" title="Close">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Choices: Vitals, Medication, Mood -->
+    <div class="px-6 py-5 space-y-3">
+      <!-- 1. Measurement -->
+      <button id="btn-pick-measurement" type="button" class="cursor-pointer w-full p-4 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 transition flex items-center gap-3.5 text-left group active:scale-98">
+        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-xs">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-base font-black text-slate-900 group-hover:text-purple-700 transition">Measurement</div>
+          <div class="text-xs text-slate-500 font-medium">Weight, blood pressure, pulse and more</div>
+        </div>
+        <div class="text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
+
+      <!-- 2. Medication -->
+      <button id="btn-pick-medication" type="button" class="cursor-pointer w-full p-4 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 transition flex items-center gap-3.5 text-left group active:scale-98">
+        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-xs">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-base font-black text-slate-900 group-hover:text-purple-700 transition">Medication</div>
+          <div class="text-xs text-slate-500 font-medium">Mark a dose as taken</div>
+        </div>
+        <div class="text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
+
+      <!-- 3. Mood -->
+      <button id="btn-pick-mood" type="button" class="cursor-pointer w-full p-4 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 transition flex items-center gap-3.5 text-left group active:scale-98">
+        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-xs">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-base font-black text-slate-900 group-hover:text-purple-700 transition">Mood</div>
+          <div class="text-xs text-slate-500 font-medium">Log your mood and tags</div>
+        </div>
+        <div class="text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 5B. MEDICATION INTAKE LOG DRAWER -->
+  <div id="modal-med-intake-drawer" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden no-print">
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 tracking-tight">Record Medication Dose</h3>
+        <p class="text-xs text-slate-500 font-medium">Mark intake status and time</p>
+      </div>
+      <button id="btn-close-med-intake-drawer" type="button" class="cursor-pointer p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition" title="Close">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="overflow-y-auto px-6 py-5 space-y-4 flex-1">
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Select Medication:</label>
+        <select id="select-intake-med" class="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl py-3 px-4 text-base font-bold text-slate-900 focus:bg-white focus:border-[#B18AFF] focus:ring-2 focus:ring-purple-200 focus:outline-none transition"></select>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Dose Timing / Slot:</label>
+        <select id="select-intake-slot" class="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl py-3 px-4 text-base font-bold text-slate-900 focus:bg-white focus:border-[#B18AFF] focus:ring-2 focus:ring-purple-200 focus:outline-none transition">
+          <option value="morning">Morning (AM)</option>
+          <option value="afternoon">Afternoon</option>
+          <option value="evening">Evening (PM)</option>
+          <option value="bedtime">Bedtime</option>
+          <option value="prn">As Needed (SOS / PRN)</option>
+        </select>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Intake Status:</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" class="intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition" data-status="taken">
+            <span class="text-base font-black">✓</span>
+            <span>Taken</span>
+          </button>
+          <button type="button" class="intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition" data-status="late">
+            <span class="text-base font-black">⏱</span>
+            <span>Late</span>
+          </button>
+          <button type="button" class="intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition" data-status="skipped">
+            <span class="text-base font-black">✕</span>
+            <span>Skipped</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Date & Time:</label>
+        <input type="datetime-local" id="in-intake-dt" class="hl-form-input font-medium" />
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Notes (Optional):</label>
+        <input type="text" id="in-intake-notes" placeholder="e.g., Taken after breakfast" class="hl-form-input" />
+      </div>
+
+      <div class="pt-2 flex items-center gap-2">
+        <button id="btn-save-intake-drawer" type="button" class="cursor-pointer flex-1 py-3.5 px-4 rounded-2xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black text-sm shadow-md active:scale-98 transition">
+          Save Dose
+        </button>
+        <button id="btn-cancel-intake-drawer" type="button" class="cursor-pointer py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5C. MOOD & WELLBEING LOG DRAWER -->
+  <div id="modal-mood-drawer" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden no-print">
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 tracking-tight">Log Mood</h3>
+        <p class="text-xs text-slate-500 font-medium">How are you feeling right now?</p>
+      </div>
+      <button id="btn-close-mood-drawer" type="button" class="cursor-pointer p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition" title="Close">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="overflow-y-auto px-6 py-5 space-y-4 flex-1">
+      <!-- 5 Faces -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Overall Mood:</label>
+        <div class="grid grid-cols-5 gap-1.5 text-center" id="mood-scores-grid">
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="1" data-label="Terrible">
+            <span class="text-2xl">😖</span>
+            <span class="text-[10px] font-bold text-slate-700">Terrible</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="2" data-label="Low">
+            <span class="text-2xl">🙁</span>
+            <span class="text-[10px] font-bold text-slate-700">Low</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="3" data-label="Okay">
+            <span class="text-2xl">😐</span>
+            <span class="text-[10px] font-bold text-slate-700">Okay</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border-2 border-purple-500 bg-purple-100 text-purple-900 flex flex-col items-center gap-1 transition active:scale-95 shadow-xs" data-score="4" data-label="Good">
+            <span class="text-2xl">🙂</span>
+            <span class="text-[10px] font-black text-purple-900">Good</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="5" data-label="Great">
+            <span class="text-2xl">😄</span>
+            <span class="text-[10px] font-bold text-slate-700">Great</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Energy / State Pills -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Energy & Mind State:</label>
+        <div class="flex flex-wrap gap-1.5" id="mood-energy-container">
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Calm">😌 Calm</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Energetic">⚡ Energetic</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Stressed">😫 Stressed</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Fatigued">🥱 Fatigued</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Anxious">😰 Anxious</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Relaxed">🧘 Relaxed</button>
+        </div>
+      </div>
+
+      <!-- Quick Context Tags -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Context Tags:</label>
+        <div class="flex flex-wrap gap-1.5" id="mood-tags-container">
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Work">💼 Work</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Sleep">💤 Sleep</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Family">🏠 Family</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Exercise">🏃 Exercise</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Diet">🥗 Diet</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Meds">💊 Meds</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Weather">🌤️ Weather</button>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Date & Time:</label>
+        <input type="datetime-local" id="in-mood-dt" class="hl-form-input font-medium" />
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Notes & Reflections:</label>
+        <textarea id="in-mood-notes" rows="2" placeholder="Any thoughts, triggers, or notes..." class="hl-form-input resize-none"></textarea>
+      </div>
+
+      <div class="pt-2 flex items-center gap-2">
+        <button id="btn-save-mood-drawer" type="button" class="cursor-pointer flex-1 py-3.5 px-4 rounded-2xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black text-sm shadow-md active:scale-98 transition">
+          Save Mood
+        </button>
+        <button id="btn-cancel-mood-drawer" type="button" class="cursor-pointer py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5D. ADD MEASUREMENT SLIDE-OVER DRAWER -->
+  <div id="log-drawer" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden no-print">>
+    
+    <!-- Header -->
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <h3 class="text-xl font-bold text-slate-900 tracking-tight">Add Measurement</h3>
+      <button id="btn-close-log-drawer" class="p-1 text-slate-400 hover:text-slate-700 transition">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Content Area -->
+    <div class="overflow-y-auto px-6 py-5 space-y-4 flex-1">
+      
+      <!-- Vital Type Selector -->
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Type:</label>
+        <div class="relative">
+          <select id="select-vital-type" class="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl py-3 px-4 text-base font-semibold text-slate-900 appearance-none focus:bg-white focus:border-[#B18AFF] focus:ring-2 focus:ring-purple-200 focus:outline-none transition pr-10">
+            <option value="bp" selected>Blood Pressure</option>
+            <option value="weight">Weight</option>
+            <option value="pulse">Pulse</option>
+            <option value="glucose">Blood glucose</option>
+            <option value="spo2">Oxygen saturation (SpO2)</option>
+            <option value="temp">Body temperature</option>
+            <option value="waist">Waist circumference</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- TYPE 1: BLOOD PRESSURE -->
+      <div id="section-form-bp" class="space-y-3">
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Systolic <span class="text-xs font-normal text-slate-500">mmHg :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="sys-single" placeholder="120" class="hl-form-input" />
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Diastolic <span class="text-xs font-normal text-slate-500">mmHg :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="dia-single" placeholder="80" class="hl-form-input" />
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Pulse <span class="text-xs font-normal text-slate-500">bpm :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-bp-pulse" placeholder="72" class="hl-form-input" />
+        </div>
+
+        <!-- 2nd Reading / Averaging Box -->
+        <div id="secondary-reading-box" class="hidden p-3 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-2">
+          <div class="flex items-center justify-between text-xs font-bold text-purple-900">
+            <span>2nd Reading (Clinical Averaging)</span>
+            <span id="bp-calculated-avg" class="px-2 py-0.5 rounded-full bg-purple-600 text-white font-extrabold text-[11px]">-- / --</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" inputmode="numeric" id="sys-r2" placeholder="Sys 2" class="hl-form-input text-xs" />
+            <input type="number" inputmode="numeric" id="dia-r2" placeholder="Dia 2" class="hl-form-input text-xs" />
+          </div>
+        </div>
+      </div>
+
+      <!-- TYPE 2: WEIGHT -->
+      <div id="section-form-weight" class="hidden space-y-3">
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Weight <span class="text-xs font-normal text-slate-500">kg :</span>
+          </label>
+          <input type="number" step="0.1" inputmode="decimal" id="in-weight" placeholder="75.0" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 3: PULSE STANDALONE -->
+      <div id="section-form-pulse" class="hidden space-y-3">
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Pulse <span class="text-xs font-normal text-slate-500">bpm :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-pulse-standalone" placeholder="72" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 4: GLUCOSE -->
+      <div id="section-form-glucose" class="hidden space-y-3">
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Blood Glucose <span class="text-xs font-normal text-slate-500">mg/dL :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-glucose" placeholder="95" class="hl-form-input" />
+        </div>
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">Measurement State:</label>
+          <select id="in-glucose-type" class="hl-form-input">
+            <option value="Fasting" selected>Fasting (Morning before breakfast)</option>
+            <option value="Post-Prandial">Post-Prandial (2 hrs post-meal)</option>
+            <option value="Bedtime">Bedtime</option>
+            <option value="Random">Random</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TYPE 5: SPO2 -->
+      <div id="section-form-spo2" class="hidden space-y-3">
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Oxygen Saturation <span class="text-xs font-normal text-slate-500">% :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-spo2" placeholder="99" min="70" max="100" class="hl-form-input" />
+        </div>
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Pulse <span class="text-xs font-normal text-slate-500">bpm :</span>
+          </label>
+          <input type="number" inputmode="numeric" id="in-spo2-pulse" placeholder="72" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 6: TEMPERATURE -->
+      <div id="section-form-temp" class="hidden space-y-3">
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Body Temperature <span class="text-xs font-normal text-slate-500">°F :</span>
+          </label>
+          <input type="number" step="0.1" inputmode="decimal" id="in-temp" placeholder="98.6" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- TYPE 7: WAIST -->
+      <div id="section-form-waist" class="hidden space-y-3">
+        <div class="space-y-1">
+          <label class="block text-sm font-semibold text-slate-800">
+            Waist Circumference <span class="text-xs font-normal text-slate-500">cm :</span>
+          </label>
+          <input type="number" step="0.5" inputmode="decimal" id="in-waist" placeholder="88.0" class="hl-form-input" />
+        </div>
+      </div>
+
+      <!-- CONTEXT-SENSITIVE MEDTIMING CONTAINER (STRICTLY FOR BP & GLUCOSE ONLY) -->
+      <div id="med-context-container" class="space-y-1">
+        <label class="block text-sm font-semibold text-slate-800">Medication Timing Context:</label>
+        <select id="in-med-context" class="hl-form-input text-sm">
+          <option value="Before Telmikind / Meds" selected>Before Morning Meds (Trough check)</option>
+          <option value="Post Meds">Post Meds</option>
+          <option value="Bedtime">Bedtime</option>
+          <option value="Fasting (AM)">Fasting (AM)</option>
+          <option value="Random">Random</option>
+        </select>
+      </div>
+
+      <!-- Notes Field -->
+      <div class="space-y-1">
+        <label class="block text-sm font-semibold text-slate-800">Quick Note (Optional):</label>
+        <input type="text" id="in-notes" placeholder="e.g. Rested 5m, feeling calm" class="hl-form-input text-sm" />
+      </div>
+
+      <!-- Retroactive Date/Time Picker Box -->
+      <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            <span class="text-xs font-bold text-slate-700">Measured At:</span>
+          </div>
+          <button type="button" id="btn-toggle-datetime" class="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 px-2.5 py-0.5 rounded-md border border-purple-200 transition">
+            ✎ Change Time
+          </button>
+        </div>
+
+        <div id="datetime-display-text" class="text-xs font-bold text-slate-900 bg-white py-2 px-3 rounded-xl border border-slate-200 flex items-center justify-between shadow-xs">
+          <span id="dt-friendly-label">Today, 05:45 PM</span>
+          <span class="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider">Recorded</span>
+        </div>
+
+        <div id="datetime-edit-container" class="hidden pt-1">
+          <input type="datetime-local" id="in-timestamp" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-500" />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center gap-3">
+      <button type="button" id="btn-cancel-modal" class="py-3 px-4 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold active:scale-95 transition">
+        Cancel
+      </button>
+      <button type="button" id="btn-save-drawer" class="flex-1 py-3 px-4 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white text-sm font-extrabold shadow-md active:scale-98 transition flex items-center justify-center gap-2">
+        <svg class="w-4 h-4 stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Measurement
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. MEDICATION PRESCRIPTION MANAGER MODAL -->
+  <!-- ========================================== -->
+  <div id="modal-med-manager" class="fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div>
+          <h3 class="text-base font-extrabold text-slate-900">Manage Prescriptions</h3>
+          <p class="text-[11px] text-slate-400">Configure medication schedule</p>
+        </div>
+        <button id="btn-close-med-modal" class="text-slate-400 hover:text-slate-700">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Medication Form -->
+      <form id="form-add-medication" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Medication Name</label>
+          <input type="text" id="in-med-name" required placeholder="e.g. Telmikind, Metformin" class="hl-form-input text-xs" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Dosage</label>
+            <input type="text" id="in-med-dosage" required placeholder="e.g. 40mg, 500mg" class="hl-form-input text-xs" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Schedule Type</label>
+            <select id="in-med-sched-type" class="hl-form-input text-xs">
+              <option value="scheduled" selected>Scheduled Daily</option>
+              <option value="prn">As-Needed (PRN)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Frequency Slot</label>
+          <select id="in-med-freq" class="hl-form-input text-xs">
+            <option value="morning" selected>Morning (08:00 AM)</option>
+            <option value="evening">Evening (08:00 PM)</option>
+            <option value="twice_daily">Twice Daily (Morning & Evening)</option>
+            <option value="thrice_daily">Thrice Daily</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Instructions (Optional)</label>
+          <input type="text" id="in-med-instructions" placeholder="e.g. Take with breakfast" class="hl-form-input text-xs" />
+        </div>
+
+        <button type="submit" class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition">
+          + Add Medication
+        </button>
+      </form>
+
+      <!-- Active Medications List -->
+      <div class="space-y-2 pt-2 border-t border-slate-100">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400 block">Current Medications</span>
+        <div id="med-manager-list" class="space-y-1.5 max-h-48 overflow-y-auto">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 7. PROFILE CREATION / EDIT MODAL (CLEANED) -->
+  <!-- ========================================== -->
+  <div id="modal-profile-form" class="fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 id="profile-form-title" class="text-base font-extrabold text-slate-900">Patient Profile</h3>
+        <button id="btn-close-profile-modal" class="text-slate-400 hover:text-slate-700">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="form-patient-profile" class="space-y-3">
+        <input type="hidden" id="in-prof-id" value="" />
+        
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Display Name</label>
+          <input type="text" id="in-prof-name" required placeholder="e.g. Father, Demo" class="hl-form-input text-xs" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Gender</label>
+            <select id="in-prof-gender" class="hl-form-input text-xs">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Age (Years)</label>
+            <input type="number" id="in-prof-age" placeholder="40" class="hl-form-input text-xs" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Height (cm) <span class="font-normal text-slate-400">for BMI</span></label>
+            <input type="number" id="in-prof-height" placeholder="175" class="hl-form-input text-xs" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Blood Group</label>
+            <input type="text" id="in-prof-bloodgroup" placeholder="e.g. O+" class="hl-form-input text-xs" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Diagnosed Condition</label>
+          <input type="text" id="in-prof-condition" placeholder="e.g. Hypertension, Diabetes" class="hl-form-input text-xs" />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-extrabold uppercase text-slate-500 mb-1">Physician / Emergency Notes</label>
+          <textarea id="in-prof-notes" rows="2" placeholder="e.g. Monitor morning trough readings" class="hl-form-input text-xs"></textarea>
+        </div>
+
+        <div class="pt-2 space-y-2">
+          <button type="submit" class="w-full py-3 bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black rounded-xl text-xs shadow-md transition active:scale-98">
+            Save Profile
+          </button>
+          <button type="button" id="btn-delete-active-profile" class="hidden w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs border border-rose-200 transition active:scale-98">
+            Delete Profile
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Pill -->
+  <div id="toast" class="fixed top-5 inset-x-0 z-[80] flex justify-center pointer-events-none opacity-0 transition-opacity duration-200 no-print">
+    <div id="toast-text" class="bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg">
+      Saved
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 8. JAVASCRIPT LOGIC & ENGINE (V6.0) -->
+  <!-- ========================================== -->
+  <script>
+    // Database Configuration & Non-Destructive v2 Schema Migration
+    const DB_NAME = 'VitalsTrackerDB';
+    const DB_VERSION = 3; // Additive migration: adds medications & intakes stores
+    const STORE_PROFILES = 'profiles';
+    const STORE_VITALS = 'vitals';
+    const STORE_MEDICATIONS = 'medications';
+    const STORE_INTAKES = 'medication_intakes';
+    const STORE_MOODS = 'moods';
+
+    let activeProfileId = null;
+    let profiles = [];
+    let isSecondReadingEnabled = false;
+    let currentHistoryFilter = 'all';
+
+    // Interactive time-range filters for Trends tab
+    let trendBpRange = 'all';
+    let trendGlucRange = '30';
+    let trendWeightRange = '30';
+    let trendPulseRange = '30';
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          // Store 1: Profiles
+          if (!db.objectStoreNames.contains(STORE_PROFILES)) {
+            const ps = db.createObjectStore(STORE_PROFILES, { keyPath: 'id', autoIncrement: true });
+            ps.add({
+              name: 'Demo',
+              gender: 'Male',
+              age: 40,
+              heightCm: 175,
+              condition: 'Hypertension',
+              bloodGroup: 'O+',
+              notes: 'Monitor morning trough BP prior to medication.',
+              createdAt: new Date().toISOString()
+            });
+          }
+          // Store 2: Vitals Telemetry
+          if (!db.objectStoreNames.contains(STORE_VITALS)) {
+            const vs = db.createObjectStore(STORE_VITALS, { keyPath: 'id', autoIncrement: true });
+            vs.createIndex('profileId', 'profileId', { unique: false });
+            vs.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+          // Store 3: Medications (Additive in v6.0)
+          if (!db.objectStoreNames.contains(STORE_MEDICATIONS)) {
+            const ms = db.createObjectStore(STORE_MEDICATIONS, { keyPath: 'id' });
+            ms.createIndex('profileId', 'profileId', { unique: false });
+          }
+                    // Store 4: Medication Intake Ledger (Additive in v6.0)
+          if (!db.objectStoreNames.contains(STORE_INTAKES)) {
+            const is = db.createObjectStore(STORE_INTAKES, { keyPath: 'id' });
+            is.createIndex('profileId', 'profileId', { unique: false });
+            is.createIndex('scheduledDate', 'scheduledDate', { unique: false });
+            is.createIndex('medicationId', 'medicationId', { unique: false });
+          }
+          // Store 5: Mood & Wellbeing (Additive in v6.1)
+          if (!db.objectStoreNames.contains(STORE_MOODS)) {
+            const md = db.createObjectStore(STORE_MOODS, { keyPath: 'id', autoIncrement: true });
+            md.createIndex('profileId', 'profileId', { unique: false });
+            md.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // DB Access Methods
+    async function dbGetProfiles() {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readonly');
+        const req = tx.objectStore(STORE_PROFILES).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbAddProfile(p) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readwrite');
+        const req = tx.objectStore(STORE_PROFILES).add(p);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbUpdateProfile(p) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readwrite');
+        const req = tx.objectStore(STORE_PROFILES).put(p);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteProfile(id) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES, STORE_VITALS, STORE_MEDICATIONS, STORE_INTAKES], 'readwrite');
+        tx.objectStore(STORE_PROFILES).delete(id);
+        
+        // Cascade delete vitals
+        const vs = tx.objectStore(STORE_VITALS);
+        vs.getAll().onsuccess = (e) => {
+          (e.target.result || []).forEach(item => {
+            if (Number(item.profileId) === Number(id)) vs.delete(item.id);
+          });
+        };
+        // Cascade delete meds & intakes
+        const ms = tx.objectStore(STORE_MEDICATIONS);
+        ms.getAll().onsuccess = (e) => {
+          (e.target.result || []).forEach(item => {
+            if (Number(item.profileId) === Number(id)) ms.delete(item.id);
+          });
+        };
+        const is = tx.objectStore(STORE_INTAKES);
+        is.getAll().onsuccess = (e) => {
+          (e.target.result || []).forEach(item => {
+            if (Number(item.profileId) === Number(id)) is.delete(item.id);
+          });
+        };
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbGetVitals(pId = null) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readonly');
+        const req = tx.objectStore(STORE_VITALS).getAll();
+        req.onsuccess = () => {
+          let list = req.result || [];
+          if (pId !== null && pId !== undefined) {
+            list = list.filter(v => Number(v.profileId) === Number(pId));
+          }
+          list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbAddVital(rec) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readwrite');
+        const req = tx.objectStore(STORE_VITALS).add(rec);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteVital(id) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readwrite');
+        tx.objectStore(STORE_VITALS).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // Medication & Intake Storage
+    async function dbGetMedications(pId) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MEDICATIONS], 'readonly');
+        const req = tx.objectStore(STORE_MEDICATIONS).getAll();
+        req.onsuccess = () => {
+          const list = (req.result || []).filter(m => Number(m.profileId) === Number(pId));
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbPutMedication(med) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MEDICATIONS], 'readwrite');
+        const req = tx.objectStore(STORE_MEDICATIONS).put(med);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteMedication(medId) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MEDICATIONS], 'readwrite');
+        tx.objectStore(STORE_MEDICATIONS).delete(medId);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbGetIntakes(pId, dateStr = null) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_INTAKES], 'readonly');
+        const req = tx.objectStore(STORE_INTAKES).getAll();
+        req.onsuccess = () => {
+          let list = (req.result || []).filter(i => Number(i.profileId) === Number(pId));
+          if (dateStr) list = list.filter(i => i.scheduledDate === dateStr);
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbPutIntake(intake) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_INTAKES], 'readwrite');
+        const req = tx.objectStore(STORE_INTAKES).put(intake);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    
+    // Mood & Wellbeing Storage (v6.1)
+    async function dbGetMoods(pId) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MOODS], 'readonly');
+        const req = tx.objectStore(STORE_MOODS).getAll();
+        req.onsuccess = () => {
+          let list = req.result || [];
+          if (pId != null) list = list.filter(m => Number(m.profileId) === Number(pId));
+          list.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbSaveMood(record) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MOODS], 'readwrite');
+        const req = tx.objectStore(STORE_MOODS).put(record);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteMood(id) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MOODS], 'readwrite');
+        tx.objectStore(STORE_MOODS).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // Auto-seed default medication if none exist
+    async function ensureDefaultMedications(pId) {
+      const meds = await dbGetMedications(pId);
+      if (!meds.length) {
+        await dbPutMedication({
+          id: 'med-' + Date.now(),
+          profileId: Number(pId),
+          name: 'Telmikind',
+          dosage: '40mg',
+          scheduleType: 'scheduled',
+          frequency: 'morning',
+          timeSlots: ['08:00'],
+          instructions: 'Take in morning on empty stomach',
+          active: true,
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = msg;
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 2200);
+    }
+  </script>
+
+  <script>
+    // Universal SVG Chart Builder with Shaded Clinical Bands
+    function renderLightLineChart(options) {
+      const { width = 340, height = 140, series = [] } = options;
+      const padL = 36, padR = 16, padT = 16, padB = 24;
+
+      let allVals = [];
+      series.forEach(s => s.points.forEach(p => { if (p.val != null && !isNaN(p.val)) allVals.push(p.val); }));
+
+      if (!allVals.length) {
+        return `
+          <div class="py-8 px-4 text-center space-y-2">
+            <div class="w-10 h-10 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div class="text-xs font-bold text-slate-700">No telemetry recorded in this range</div>
+            <div class="text-[10px] text-slate-400">Tap + to add a measurement</div>
+          </div>
+        `;
+      }
+
+      let minVal = Math.min(...allVals);
+      let maxVal = Math.max(...allVals);
+      if (minVal === maxVal) { minVal = Math.max(0, minVal - 5); maxVal += 5; }
+      const span = maxVal - minVal;
+
+      const nPoints = Math.max(...series.map(s => s.points.length));
+      const getX = (i) => nPoints <= 1 ? (width - padL - padR) / 2 + padL : padL + (i * ((width - padL - padR) / (nPoints - 1)));
+      const getY = (v) => height - padB - (((v - minVal) / span) * (height - padT - padB));
+
+      let gridSvg = '';
+      for (let t = 0; t <= 4; t++) {
+        const valTick = minVal + (t * (span / 4));
+        const yPos = getY(valTick);
+        gridSvg += `
+          <line x1="${padL}" y1="${yPos}" x2="${width - padR}" y2="${yPos}" stroke="#E2E8F0" stroke-dasharray="2,3" stroke-width="1" />
+          <text x="${padL - 6}" y="${yPos + 3}" font-size="8" fill="#94A3B8" text-anchor="end" font-weight="600">${Math.round(valTick)}</text>
+        `;
+      }
+
+      let pathsSvg = '';
+      series.forEach(s => {
+        if (!s.points.length) return;
+        const pts = s.points;
+        const dLine = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${getX(i).toFixed(1)} ${getY(p.val).toFixed(1)}`).join(' ');
+        if (s.fill && pts.length > 1) {
+          const dArea = `${dLine} L ${getX(pts.length - 1).toFixed(1)} ${height - padB} L ${getX(0).toFixed(1)} ${height - padB} Z`;
+          pathsSvg += `<path d="${dArea}" fill="${s.fill}" opacity="0.08" />`;
+        }
+        pathsSvg += `<path d="${dLine}" fill="none" stroke="${s.stroke}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />`;
+        pts.forEach((p, i) => {
+          pathsSvg += `<circle cx="${getX(i).toFixed(1)}" cy="${getY(p.val).toFixed(1)}" r="${s.r || 3.5}" fill="${s.stroke}" stroke="#FFFFFF" stroke-width="1.8" />`;
+        });
+      });
+
+      let dateSvg = '';
+      if (series[0] && series[0].points.length) {
+        const pts = series[0].points;
+        const indices = pts.length === 1 ? [0] : [0, pts.length - 1];
+        indices.forEach(i => {
+          if (pts[i] && pts[i].date) {
+            const d = new Date(pts[i].date);
+            const str = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+            dateSvg += `<text x="${getX(i).toFixed(1)}" y="${height - 6}" font-size="8.5" fill="#64748B" font-weight="700" text-anchor="middle">${str}</text>`;
+          }
+        });
+      }
+
+      return `<svg viewBox="0 0 ${width} ${height}" class="w-full h-36 overflow-visible select-none">${gridSvg}${pathsSvg}${dateSvg}</svg>`;
+    }
+
+    // Mini Sparkline SVG Builder for Metric Cards
+    function renderSparklineSvg(values, strokeColor = '#B18AFF') {
+      if (!values || values.length < 2) {
+        return `<svg viewBox="0 0 80 24" class="w-20 h-6"><line x1="4" y1="12" x2="76" y2="12" stroke="#E2E8F0" stroke-width="2" stroke-linecap="round"/></svg>`;
+      }
+      const width = 80, height = 24, pad = 3;
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const span = max - min || 1;
+      const step = (width - pad * 2) / (values.length - 1);
+      const points = values.map((v, i) => {
+        const x = pad + (i * step);
+        const y = height - pad - (((v - min) / span) * (height - pad * 2));
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" class="w-20 h-6 overflow-visible">
+          <polyline points="${points}" fill="none" stroke="${strokeColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      `;
+    }
+
+    function filterRecordsByRange(records, rangeOption) {
+      if (rangeOption === 'all') return records;
+      const days = parseInt(rangeOption, 10);
+      const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
+      return records.filter(r => new Date(r.timestamp) >= cutoff);
+    }
+  </script>
+
+  <script>
+    // Tab Navigation Logic
+    const tabs = ['tab-dashboard', 'tab-medications', 'tab-history', 'tab-doctor'];
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-tab');
+        tabs.forEach(t => {
+          const el = document.getElementById(t);
+          if (el) el.classList.add('hidden');
+        });
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.classList.remove('hidden');
+
+        document.querySelectorAll('.nav-tab-btn').forEach(b => {
+          b.className = 'nav-tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600';
+        });
+        btn.className = 'nav-tab-btn flex flex-col items-center gap-1 text-purple-600 font-extrabold';
+        refreshAllViews();
+      });
+    });
+
+    // Dashboard Add button shortcut
+    document.getElementById('btn-dash-add-shortcut')?.addEventListener('click', openLogPickerDrawer);
+
+    // Medications tab buttons
+    document.getElementById('btn-med-tab-manage')?.addEventListener('click', () => {
+      renderMedicationsManagerList();
+      medModal.classList.remove('hidden');
+    });
+    document.getElementById('btn-med-tab-add')?.addEventListener('click', () => {
+      renderMedicationsManagerList();
+      medModal.classList.remove('hidden');
+    });
+
+    const drawer = document.getElementById('log-drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    const selectVitalType = document.getElementById('select-vital-type');
+
+    function syncFormDateTimeToNow() {
+      const now = new Date();
+      const localISO = (new Date(now.getTime() - now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      document.getElementById('in-timestamp').value = localISO;
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('dt-friendly-label').textContent = `Today, ${timeStr}`;
+      document.getElementById('datetime-edit-container').classList.add('hidden');
+    }
+
+    // Toggle Retroactive DateTime Picker
+    document.getElementById('btn-toggle-datetime').addEventListener('click', () => {
+      document.getElementById('datetime-edit-container').classList.toggle('hidden');
+    });
+
+    document.getElementById('in-timestamp').addEventListener('change', (e) => {
+      if (e.target.value) {
+        const chosen = new Date(e.target.value);
+        const dStr = chosen.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const tStr = chosen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('dt-friendly-label').textContent = `${dStr}, ${tStr}`;
+      }
+    });
+
+    const logPickerDrawer = document.getElementById('modal-log-picker');
+    const medIntakeDrawer = document.getElementById('modal-med-intake-drawer');
+    const moodDrawer = document.getElementById('modal-mood-drawer');
+
+    let currentSelectedIntakeStatus = 'taken';
+    let currentSelectedMoodScore = 4;
+    let currentSelectedMoodLabel = 'Good';
+    let currentSelectedMoodEnergy = '';
+    let currentSelectedMoodTags = new Set();
+
+    const MOOD_EMOJIS = {
+      1: '😖',
+      2: '🙁',
+      3: '😐',
+      4: '🙂',
+      5: '😄'
+    };
+
+    function showBackdrop() {
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      backdrop.classList.add('opacity-100', 'pointer-events-auto');
+    }
+
+    function hideBackdrop() {
+      backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    function openLogPickerDrawer() {
+      drawer.classList.add('drawer-hidden');
+      drawer.classList.remove('drawer-visible');
+      if (medIntakeDrawer) {
+        medIntakeDrawer.classList.add('drawer-hidden');
+        medIntakeDrawer.classList.remove('drawer-visible');
+      }
+      if (moodDrawer) {
+        moodDrawer.classList.add('drawer-hidden');
+        moodDrawer.classList.remove('drawer-visible');
+      }
+      showBackdrop();
+      logPickerDrawer.classList.remove('drawer-hidden');
+      logPickerDrawer.classList.add('drawer-visible');
+    }
+
+    function closeLogPickerDrawer() {
+      logPickerDrawer.classList.remove('drawer-visible');
+      logPickerDrawer.classList.add('drawer-hidden');
+    }
+
+    function openMeasurementDrawer() {
+      closeLogPickerDrawer();
+      syncFormDateTimeToNow();
+      showBackdrop();
+      drawer.classList.remove('drawer-hidden');
+      drawer.classList.add('drawer-visible');
+      updateFormTypeVisibility(selectVitalType.value);
+    }
+
+    function closeMeasurementDrawer() {
+      drawer.classList.remove('drawer-visible');
+      drawer.classList.add('drawer-hidden');
+      hideBackdrop();
+    }
+
+    async function openMedIntakeDrawer() {
+      closeLogPickerDrawer();
+      const meds = await dbGetMedications(activeProfileId);
+      const selMed = document.getElementById('select-intake-med');
+      selMed.innerHTML = '';
+      if (!meds.length) {
+        selMed.innerHTML = '<option value="">No medications configured</option>';
+      } else {
+        meds.forEach(m => {
+          selMed.innerHTML += `<option value="${m.id}">${m.name} (${m.dosage})</option>`;
+        });
+      }
+      
+      const now = new Date();
+      const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById('in-intake-dt').value = localIso;
+      document.getElementById('in-intake-notes').value = '';
+      currentSelectedIntakeStatus = 'taken';
+      updateIntakeDrawerStatusUI();
+
+      showBackdrop();
+      medIntakeDrawer.classList.remove('drawer-hidden');
+      medIntakeDrawer.classList.add('drawer-visible');
+    }
+
+    function closeMedIntakeDrawer() {
+      medIntakeDrawer.classList.remove('drawer-visible');
+      medIntakeDrawer.classList.add('drawer-hidden');
+      hideBackdrop();
+    }
+
+    function updateIntakeDrawerStatusUI() {
+      document.querySelectorAll('.intake-drawer-status-btn').forEach(btn => {
+        const st = btn.getAttribute('data-status');
+        if (st === currentSelectedIntakeStatus) {
+          if (st === 'taken') btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition shadow-xs';
+          else if (st === 'late') btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-amber-500 bg-amber-50 text-amber-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition shadow-xs';
+          else btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-slate-500 bg-slate-100 text-slate-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition shadow-xs';
+        } else {
+          btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.intake-drawer-status-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentSelectedIntakeStatus = btn.getAttribute('data-status');
+        updateIntakeDrawerStatusUI();
+      });
+    });
+
+    function openMoodDrawer() {
+      closeLogPickerDrawer();
+      const now = new Date();
+      const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById('in-mood-dt').value = localIso;
+      document.getElementById('in-mood-notes').value = '';
+      currentSelectedMoodScore = 4;
+      currentSelectedMoodLabel = 'Good';
+      currentSelectedMoodEnergy = '';
+      currentSelectedMoodTags.clear();
+      updateMoodScoreUI();
+      updateMoodEnergyUI();
+      updateMoodTagsUI();
+
+      showBackdrop();
+      moodDrawer.classList.remove('drawer-hidden');
+      moodDrawer.classList.add('drawer-visible');
+    }
+
+    function closeMoodDrawer() {
+      moodDrawer.classList.remove('drawer-visible');
+      moodDrawer.classList.add('drawer-hidden');
+      hideBackdrop();
+    }
+
+    function updateMoodScoreUI() {
+      document.querySelectorAll('.mood-score-btn').forEach(btn => {
+        const sc = Number(btn.getAttribute('data-score'));
+        if (sc === currentSelectedMoodScore) {
+          btn.className = 'mood-score-btn cursor-pointer p-2 rounded-2xl border-2 border-purple-500 bg-purple-100 text-purple-900 flex flex-col items-center gap-1 transition active:scale-95 shadow-xs';
+          btn.querySelector('span:last-child').className = 'text-[10px] font-black text-purple-900';
+        } else {
+          btn.className = 'mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95';
+          btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-slate-700';
+        }
+      });
+    }
+
+    document.querySelectorAll('.mood-score-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentSelectedMoodScore = Number(btn.getAttribute('data-score'));
+        currentSelectedMoodLabel = btn.getAttribute('data-label');
+        updateMoodScoreUI();
+      });
+    });
+
+    function updateMoodEnergyUI() {
+      document.querySelectorAll('.mood-energy-pill').forEach(btn => {
+        const en = btn.getAttribute('data-energy');
+        if (en === currentSelectedMoodEnergy) {
+          btn.className = 'mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-extrabold bg-purple-600 text-white border border-purple-600 transition shadow-xs';
+        } else {
+          btn.className = 'mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.mood-energy-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const en = btn.getAttribute('data-energy');
+        currentSelectedMoodEnergy = (currentSelectedMoodEnergy === en) ? '' : en;
+        updateMoodEnergyUI();
+      });
+    });
+
+    function updateMoodTagsUI() {
+      document.querySelectorAll('.mood-tag-pill').forEach(btn => {
+        const tg = btn.getAttribute('data-tag');
+        if (currentSelectedMoodTags.has(tg)) {
+          btn.className = 'mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold bg-purple-100 text-purple-800 border border-purple-300 transition shadow-xs';
+        } else {
+          btn.className = 'mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.mood-tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tg = btn.getAttribute('data-tag');
+        if (currentSelectedMoodTags.has(tg)) currentSelectedMoodTags.delete(tg);
+        else currentSelectedMoodTags.add(tg);
+        updateMoodTagsUI();
+      });
+    });
+
+    function closeAllDrawers() {
+      closeLogPickerDrawer();
+      drawer.classList.remove('drawer-visible');
+      drawer.classList.add('drawer-hidden');
+      if (medIntakeDrawer) {
+        medIntakeDrawer.classList.remove('drawer-visible');
+        medIntakeDrawer.classList.add('drawer-hidden');
+      }
+      if (moodDrawer) {
+        moodDrawer.classList.remove('drawer-visible');
+        moodDrawer.classList.add('drawer-hidden');
+      }
+      hideBackdrop();
+    }
+
+    // Wiring Add buttons to open HealthLog Log Picker
+    document.getElementById('btn-open-log-drawer').addEventListener('click', openLogPickerDrawer);
+    document.getElementById('btn-dash-add-shortcut').addEventListener('click', openLogPickerDrawer);
+
+    // Close buttons
+    document.getElementById('btn-close-log-picker').addEventListener('click', closeAllDrawers);
+    document.getElementById('btn-close-log-drawer').addEventListener('click', closeMeasurementDrawer);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeMeasurementDrawer);
+    document.getElementById('btn-close-med-intake-drawer').addEventListener('click', closeMedIntakeDrawer);
+    document.getElementById('btn-cancel-intake-drawer').addEventListener('click', closeMedIntakeDrawer);
+    document.getElementById('btn-close-mood-drawer').addEventListener('click', closeMoodDrawer);
+    document.getElementById('btn-cancel-mood-drawer').addEventListener('click', closeMoodDrawer);
+    backdrop.addEventListener('click', closeAllDrawers);
+
+    // Pickers inside Log Drawer
+    document.getElementById('btn-pick-measurement').addEventListener('click', openMeasurementDrawer);
+    document.getElementById('btn-pick-medication').addEventListener('click', openMedIntakeDrawer);
+    document.getElementById('btn-pick-mood').addEventListener('click', openMoodDrawer);
+
+    // Save Medication Intake from Drawer
+    document.getElementById('btn-save-intake-drawer').addEventListener('click', async () => {
+      const medId = document.getElementById('select-intake-med').value;
+      if (!medId) {
+        showToast('Please select a medication');
+        return;
+      }
+      const slot = document.getElementById('select-intake-slot').value;
+      const dtVal = document.getElementById('in-intake-dt').value;
+      const dtObj = dtVal ? new Date(dtVal) : new Date();
+      const schedDate = dtObj.toISOString().slice(0, 10);
+      const notes = document.getElementById('in-intake-notes').value.trim();
+
+      const intakeRecord = {
+        id: 'intake-' + Date.now(),
+        profileId: Number(activeProfileId),
+        medicationId: medId,
+        scheduledDate: schedDate,
+        slot: slot,
+        status: currentSelectedIntakeStatus,
+        timestamp: dtObj.toISOString(),
+        notes: notes
+      };
+
+      await dbPutIntake(intakeRecord);
+      showToast('Medication dose recorded!');
+      closeAllDrawers();
+      await refreshAllViews();
+    });
+
+    // Save Mood from Drawer
+    document.getElementById('btn-save-mood-drawer').addEventListener('click', async () => {
+      const dtVal = document.getElementById('in-mood-dt').value;
+      const dtObj = dtVal ? new Date(dtVal) : new Date();
+      const notes = document.getElementById('in-mood-notes').value.trim();
+
+      const moodRecord = {
+        profileId: Number(activeProfileId),
+        timestamp: dtObj.toISOString(),
+        score: currentSelectedMoodScore,
+        label: currentSelectedMoodLabel,
+        energy: currentSelectedMoodEnergy,
+        tags: Array.from(currentSelectedMoodTags),
+        notes: notes
+      };
+
+      await dbSaveMood(moodRecord);
+      showToast('Mood recorded successfully!');
+      closeAllDrawers();
+      await refreshAllViews();
+    });
+
+    // Context-Sensitive Vital Type Forms + medTiming Visibility Rule
+    const sectionIds = [
+      'section-form-bp',
+      'section-form-weight',
+      'section-form-pulse',
+      'section-form-glucose',
+      'section-form-spo2',
+      'section-form-temp',
+      'section-form-waist'
+    ];
+
+    function updateFormTypeVisibility(val) {
+      sectionIds.forEach(id => document.getElementById(id).classList.add('hidden'));
+
+      if (val === 'bp') document.getElementById('section-form-bp').classList.remove('hidden');
+      else if (val === 'weight') document.getElementById('section-form-weight').classList.remove('hidden');
+      else if (val === 'pulse') document.getElementById('section-form-pulse').classList.remove('hidden');
+      else if (val === 'glucose') document.getElementById('section-form-glucose').classList.remove('hidden');
+      else if (val === 'spo2') document.getElementById('section-form-spo2').classList.remove('hidden');
+      else if (val === 'temp') document.getElementById('section-form-temp').classList.remove('hidden');
+      else if (val === 'waist') document.getElementById('section-form-waist').classList.remove('hidden');
+
+      // STRICT USER RULE: medTiming is ONLY visible for BP and Glucose!
+      const medTimingContainer = document.getElementById('med-context-container');
+      if (val === 'bp' || val === 'glucose') {
+        medTimingContainer.classList.remove('hidden');
+      } else {
+        medTimingContainer.classList.add('hidden');
+      }
+    }
+
+    selectVitalType.addEventListener('change', (e) => {
+      updateFormTypeVisibility(e.target.value);
+    });
+
+    // 2nd Reading Toggle for BP
+    function updateBPAverage() {
+      const s1 = parseFloat(document.getElementById('sys-single').value);
+      const d1 = parseFloat(document.getElementById('dia-single').value);
+      const s2 = parseFloat(document.getElementById('sys-r2').value);
+      const d2 = parseFloat(document.getElementById('dia-r2').value);
+      const avgBadge = document.getElementById('bp-calculated-avg');
+
+      if (!isNaN(s1) && !isNaN(d1) && !isNaN(s2) && !isNaN(d2)) {
+        avgBadge.textContent = `${Math.round((s1 + s2) / 2)} / ${Math.round((d1 + d2) / 2)}`;
+      } else if (!isNaN(s1) && !isNaN(d1)) {
+        avgBadge.textContent = `${s1} / ${d1}`;
+      } else {
+        avgBadge.textContent = '-- / --';
+      }
+    }
+    ['sys-single', 'dia-single', 'sys-r2', 'dia-r2'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateBPAverage);
+    });
+
+    // Reset Form
+    function resetEntryForm() {
+      document.getElementById('sys-single').value = '';
+      document.getElementById('dia-single').value = '';
+      document.getElementById('in-bp-pulse').value = '';
+      document.getElementById('sys-r2').value = '';
+      document.getElementById('dia-r2').value = '';
+      document.getElementById('in-weight').value = '';
+      document.getElementById('in-pulse-standalone').value = '';
+      document.getElementById('in-glucose').value = '';
+      document.getElementById('in-spo2').value = '';
+      document.getElementById('in-spo2-pulse').value = '';
+      document.getElementById('in-temp').value = '';
+      document.getElementById('in-waist').value = '';
+      document.getElementById('in-notes').value = '';
+      document.getElementById('bp-calculated-avg').textContent = '-- / --';
+      syncFormDateTimeToNow();
+    }
+
+    // Save Measurement
+    document.getElementById('btn-save-drawer').addEventListener('click', async () => {
+      const type = selectVitalType.value;
+      let sys = null, dia = null, pulse = null, glucose = null, glucoseType = null;
+      let weight = null, spo2 = null, temp = null, waist = null;
+
+      if (type === 'bp') {
+        const s1 = parseFloat(document.getElementById('sys-single').value);
+        const d1 = parseFloat(document.getElementById('dia-single').value);
+        const s2 = parseFloat(document.getElementById('sys-r2').value);
+        const d2 = parseFloat(document.getElementById('dia-r2').value);
+
+        if ((!isNaN(s1) && isNaN(d1)) || (isNaN(s1) && !isNaN(d1))) {
+          showToast('Please enter both Systolic and Diastolic');
+          return;
+        }
+        if (!isNaN(s1) && !isNaN(d1)) {
+          if (!isNaN(s2) && !isNaN(d2)) {
+            sys = Math.round((s1 + s2) / 2);
+            dia = Math.round((d1 + d2) / 2);
+          } else {
+            sys = Math.round(s1);
+            dia = Math.round(d1);
+          }
+        }
+        const p = parseInt(document.getElementById('in-bp-pulse').value, 10);
+        if (!isNaN(p) && p > 0) pulse = p;
+      } else if (type === 'weight') {
+        const w = parseFloat(document.getElementById('in-weight').value);
+        if (!isNaN(w)) weight = parseFloat(w.toFixed(1));
+      } else if (type === 'pulse') {
+        const p = parseInt(document.getElementById('in-pulse-standalone').value, 10);
+        if (!isNaN(p) && p > 0) pulse = p;
+      } else if (type === 'glucose') {
+        const g = parseFloat(document.getElementById('in-glucose').value);
+        if (!isNaN(g)) {
+          glucose = Math.round(g);
+          glucoseType = document.getElementById('in-glucose-type').value;
+        }
+      } else if (type === 'spo2') {
+        const o = parseInt(document.getElementById('in-spo2').value, 10);
+        if (!isNaN(o)) spo2 = o;
+        const p = parseInt(document.getElementById('in-spo2-pulse').value, 10);
+        if (!isNaN(p) && p > 0) pulse = p;
+      } else if (type === 'temp') {
+        const t = parseFloat(document.getElementById('in-temp').value);
+        if (!isNaN(t)) temp = parseFloat(t.toFixed(1));
+      } else if (type === 'waist') {
+        const ws = parseFloat(document.getElementById('in-waist').value);
+        if (!isNaN(ws)) waist = parseFloat(ws.toFixed(1));
+      }
+
+      const hasAny = (sys !== null && dia !== null) || pulse !== null || glucose !== null || weight !== null || spo2 !== null || temp !== null || waist !== null;
+      if (!hasAny) {
+        showToast('Please enter a measurement value before saving');
+        return;
+      }
+
+      const tsVal = document.getElementById('in-timestamp').value;
+      const timestamp = tsVal ? new Date(tsVal).toISOString() : new Date().toISOString();
+      const medTiming = (type === 'bp' || type === 'glucose') ? document.getElementById('in-med-context').value : null;
+      const notes = document.getElementById('in-notes').value.trim();
+
+      await dbAddVital({
+        profileId: Number(activeProfileId),
+        timestamp,
+        systolic: sys,
+        diastolic: dia,
+        pulse,
+        glucose,
+        glucoseType,
+        weight,
+        spo2,
+        temp,
+        waist,
+        medTiming,
+        notes
+      });
+
+      showToast('Measurement saved locally');
+      resetEntryForm();
+      closeDrawer();
+      await refreshAllViews();
+    });
+  </script>
+
+  <script>
+    // Profile-First Gate Management Logic
+    const profileGate = document.getElementById('profile-gate-screen');
+
+    function showProfileGate() {
+      profileGate.classList.remove('opacity-0', 'pointer-events-none');
+      profileGate.classList.add('opacity-100', 'pointer-events-auto');
+      renderGateProfileCards();
+    }
+
+    function hideProfileGate() {
+      profileGate.classList.remove('opacity-100', 'pointer-events-auto');
+      profileGate.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    async function selectProfileAndEnter(id) {
+      activeProfileId = Number(id);
+      sessionStorage.setItem('vt_active_session', activeProfileId);
+      localStorage.setItem('vt_active_profile', activeProfileId);
+      hideProfileGate();
+      await ensureDefaultMedications(activeProfileId);
+      await refreshAllViews();
+      const active = profiles.find(p => Number(p.id) === activeProfileId);
+      if (active) showToast(`Welcome, ${active.name}`);
+    }
+
+    async function renderGateProfileCards() {
+      profiles = await dbGetProfiles();
+      const container = document.getElementById('gate-profile-cards');
+      document.getElementById('gate-profiles-count').textContent = `${profiles.length} Profiles`;
+
+      if (!profiles.length) {
+        container.innerHTML = `
+          <div class="p-6 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            No profiles found. Tap below to create your first profile.
+          </div>
+        `;
+        return;
+      }
+
+      const vitals = await dbGetVitals(null);
+
+      container.innerHTML = profiles.map(p => {
+        const count = vitals.filter(v => Number(v.profileId) === Number(p.id)).length;
+        const initial = (p.name || 'U').slice(0, 1).toUpperCase();
+        return `
+          <div onclick="selectProfileAndEnter(${p.id})" class="p-3.5 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 transition cursor-pointer flex items-center justify-between shadow-xs active:scale-98">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-2xl bg-purple-600 text-white font-black text-base flex items-center justify-center shadow-sm">
+                ${initial}
+              </div>
+              <div>
+                <h4 class="text-sm font-extrabold text-slate-900">${p.name}</h4>
+                <p class="text-[11px] text-slate-500 font-medium">${p.condition || 'General Health'} • ${count} records</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-purple-600 bg-purple-100/80 px-2.5 py-1 rounded-xl">Select →</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Log Out / Switch Profile Trigger
+    document.getElementById('btn-logout-profile').addEventListener('click', () => {
+      sessionStorage.removeItem('vt_active_session');
+      showProfileGate();
+    });
+
+    document.getElementById('btn-header-profile-menu').addEventListener('click', () => {
+      openProfileEditModal(activeProfileId);
+    });
+
+    document.getElementById('btn-dash-edit-profile')?.addEventListener('click', () => {
+      openProfileEditModal(activeProfileId);
+    });
+
+    // Profile Creation / Edit Modal Handlers (Cleaned Schema)
+    const profileModal = document.getElementById('modal-profile-form');
+
+    function openProfileCreateModal() {
+      document.getElementById('profile-form-title').textContent = 'Create New Profile';
+      document.getElementById('form-patient-profile').reset();
+      document.getElementById('in-prof-id').value = '';
+      document.getElementById('btn-delete-active-profile').classList.add('hidden');
+      profileModal.classList.remove('hidden');
+    }
+
+    function openProfileEditModal(id) {
+      const p = profiles.find(item => Number(item.id) === Number(id));
+      if (!p) return;
+      document.getElementById('profile-form-title').textContent = 'Edit Profile';
+      document.getElementById('in-prof-id').value = p.id;
+      document.getElementById('in-prof-name').value = p.name || '';
+      document.getElementById('in-prof-gender').value = p.gender || 'Male';
+      document.getElementById('in-prof-age').value = p.age || '';
+      document.getElementById('in-prof-height').value = p.heightCm || '';
+      document.getElementById('in-prof-bloodgroup').value = p.bloodGroup || '';
+      document.getElementById('in-prof-condition').value = p.condition || '';
+      document.getElementById('in-prof-notes').value = p.notes || '';
+      
+      document.getElementById('btn-delete-active-profile').classList.remove('hidden');
+      profileModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-gate-create-profile').addEventListener('click', openProfileCreateModal);
+    document.getElementById('btn-close-profile-modal').addEventListener('click', () => {
+      profileModal.classList.add('hidden');
+    });
+
+    document.getElementById('form-patient-profile').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const idStr = document.getElementById('in-prof-id').value;
+      const name = document.getElementById('in-prof-name').value.trim();
+      const gender = document.getElementById('in-prof-gender').value;
+      const age = parseInt(document.getElementById('in-prof-age').value, 10) || null;
+      const heightCm = parseFloat(document.getElementById('in-prof-height').value) || null;
+      const bloodGroup = document.getElementById('in-prof-bloodgroup').value.trim();
+      const condition = document.getElementById('in-prof-condition').value.trim();
+      const notes = document.getElementById('in-prof-notes').value.trim();
+
+      if (idStr) {
+        // Edit existing
+        const id = Number(idStr);
+        const existing = profiles.find(p => Number(p.id) === id) || {};
+        await dbUpdateProfile({
+          ...existing,
+          id,
+          name,
+          gender,
+          age,
+          heightCm,
+          bloodGroup,
+          condition,
+          notes,
+          updatedAt: new Date().toISOString()
+        });
+        showToast(`Profile updated: ${name}`);
+      } else {
+        // Create new
+        const newId = await dbAddProfile({
+          name,
+          gender,
+          age,
+          heightCm,
+          bloodGroup,
+          condition,
+          notes,
+          createdAt: new Date().toISOString()
+        });
+        showToast(`Profile created: ${name}`);
+        activeProfileId = newId;
+      }
+
+      profileModal.classList.add('hidden');
+      profiles = await dbGetProfiles();
+      renderGateProfileCards();
+      if (!profileGate.classList.contains('opacity-100')) {
+        await refreshAllViews();
+      }
+    });
+
+    document.getElementById('btn-delete-active-profile').addEventListener('click', async () => {
+      const id = Number(document.getElementById('in-prof-id').value);
+      if (profiles.length <= 1) {
+        showToast('Cannot delete the only existing profile');
+        return;
+      }
+      await dbDeleteProfile(id);
+      profileModal.classList.add('hidden');
+      showToast('Profile deleted');
+      profiles = await dbGetProfiles();
+      activeProfileId = profiles[0].id;
+      showProfileGate();
+    });
+  </script>
+
+  <script>
+    // Medication Management & Adherence Tracker
+    const medModal = document.getElementById('modal-med-manager');
+
+    document.getElementById('btn-open-med-manager')?.addEventListener('click', () => {
+      renderMedicationsManagerList();
+      medModal.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-med-modal').addEventListener('click', () => {
+      medModal.classList.add('hidden');
+      renderMedicationsTab();
+    });
+
+    document.getElementById('form-add-medication').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('in-med-name').value.trim();
+      const dosage = document.getElementById('in-med-dosage').value.trim();
+      const scheduleType = document.getElementById('in-med-sched-type').value;
+      const frequency = document.getElementById('in-med-freq').value;
+      const instructions = document.getElementById('in-med-instructions').value.trim();
+
+      let timeSlots = ['08:00'];
+      if (frequency === 'evening') timeSlots = ['20:00'];
+      else if (frequency === 'twice_daily') timeSlots = ['08:00', '20:00'];
+      else if (frequency === 'thrice_daily') timeSlots = ['08:00', '14:00', '20:00'];
+
+      await dbPutMedication({
+        id: 'med-' + Date.now(),
+        profileId: Number(activeProfileId),
+        name,
+        dosage,
+        scheduleType,
+        frequency,
+        timeSlots,
+        instructions,
+        active: true,
+        createdAt: new Date().toISOString()
+      });
+
+      document.getElementById('form-add-medication').reset();
+      showToast(`Added: ${name} ${dosage}`);
+      await renderMedicationsManagerList();
+    });
+
+    async function renderMedicationsManagerList() {
+      const meds = await dbGetMedications(activeProfileId);
+      const container = document.getElementById('med-manager-list');
+      if (!meds.length) {
+        container.innerHTML = '<div class="text-xs text-slate-400 text-center py-2">No medications listed yet</div>';
+        return;
+      }
+      container.innerHTML = meds.map(m => `
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+          <div>
+            <div class="font-extrabold text-slate-900">${m.name} ${m.dosage}</div>
+            <div class="text-[10px] text-slate-500 font-medium capitalize">${m.scheduleType} • ${m.frequency}</div>
+          </div>
+          <button onclick="removeMedication('${m.id}')" class="text-rose-600 hover:text-rose-800 p-1 font-bold">
+            ✕
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function removeMedication(id) {
+      await dbDeleteMedication(id);
+      showToast('Medication removed');
+      await renderMedicationsManagerList();
+    }
+
+    // Time helpers for 1-hour pre-dose window
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      const parts = timeStr.split(':');
+      let h = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      h = h ? h : 12;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    function minsToTimeStr(totalMins) {
+      const norm = ((totalMins % 1440) + 1440) % 1440;
+      const h = Math.floor(norm / 60);
+      const m = norm % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+
+    function getMedicationSlots(m) {
+      if (m.frequency === 'twice_daily') {
+        return [
+          { slot: 'morning', time: (m.timeSlots && m.timeSlots[0]) || '08:00', label: 'Morning' },
+          { slot: 'evening', time: (m.timeSlots && m.timeSlots[1]) || '20:00', label: 'Evening' }
+        ];
+      } else if (m.frequency === 'thrice_daily') {
+        return [
+          { slot: 'morning', time: (m.timeSlots && m.timeSlots[0]) || '08:00', label: 'Morning' },
+          { slot: 'afternoon', time: (m.timeSlots && m.timeSlots[1]) || '14:00', label: 'Afternoon' },
+          { slot: 'evening', time: (m.timeSlots && m.timeSlots[2]) || '20:00', label: 'Evening' }
+        ];
+      } else if (m.frequency === 'evening') {
+        return [
+          { slot: 'evening', time: (m.timeSlots && m.timeSlots[0]) || '20:00', label: 'Evening' }
+        ];
+      } else {
+        return [
+          { slot: 'morning', time: (m.timeSlots && m.timeSlots[0]) || '08:00', label: 'Morning' }
+        ];
+      }
+    }
+
+    // Dedicated Medications Tab Rendering (Matching HealthLog Screenshot 1)
+    async function renderMedicationsTab() {
+      const container = document.getElementById('med-tab-cards-container');
+      if (!container) return;
+
+      const meds = await dbGetMedications(activeProfileId);
+      if (!meds.length) {
+        container.innerHTML = `
+          <div class="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-300 space-y-3">
+            <div class="w-12 h-12 mx-auto rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl">💊</div>
+            <div class="text-sm font-extrabold text-slate-800">No Medications Prescribed</div>
+            <p class="text-xs text-slate-400 max-w-xs mx-auto">Add your prescribed medications to track schedules, daily intake and compliance.</p>
+            <button onclick="document.getElementById('modal-med-manager').classList.remove('hidden'); renderMedicationsManagerList();" class="py-2.5 px-4 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white text-xs font-bold active:scale-95 transition shadow-sm cursor-pointer">
+              + Add Medication
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const allIntakes = await dbGetIntakes(activeProfileId);
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const curMinutes = now.getHours() * 60 + now.getMinutes();
+
+      const cardsHtml = meds.map(m => {
+        const slots = getMedicationSlots(m);
+        const mIntakes = allIntakes.filter(i => i.medicationId === m.id);
+        const todayIntakes = mIntakes.filter(i => i.scheduledDate === todayStr);
+
+        // Last intake formatted
+        const lastTaken = mIntakes.filter(i => i.status === 'taken').sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+        let lastIntakeStr = 'None logged';
+        if (lastTaken) {
+          const d = new Date(lastTaken.timestamp);
+          lastIntakeStr = d.toLocaleString([], { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Next intake with 1-hour pre-dose window
+        let nextIntakeText = 'Done for today ✓';
+        let nextIntakeBadgeClass = 'text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200';
+        let pendingSlot = null;
+        let isSlotDueNow = false;
+
+        for (const s of slots) {
+          const logged = todayIntakes.find(i => i.slot === s.slot);
+          if (!logged) {
+            const [sH, sM] = s.time.split(':').map(Number);
+            const schedMin = sH * 60 + sM;
+            const appearMin = schedMin - 60;
+            pendingSlot = s;
+            if (curMinutes >= appearMin) {
+              isSlotDueNow = curMinutes >= schedMin;
+              nextIntakeText = `✔ Take now — ${formatTime12h(s.time)}`;
+              nextIntakeBadgeClass = 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200';
+            } else {
+              nextIntakeText = `Upcoming — ${formatTime12h(s.time)}`;
+              nextIntakeBadgeClass = 'text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md';
+            }
+            break;
+          }
+        }
+
+        // Adherence 7 days & 30 days
+        let sched7d = 0, taken7d = 0;
+        let sched30d = 0, taken30d = 0;
+        const cutoff7dStr = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+        const cutoff30dStr = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+
+        for (let d = 0; d < 7; d++) {
+          sched7d += slots.length;
+        }
+        for (let d = 0; d < 30; d++) {
+          sched30d += slots.length;
+        }
+        taken7d = mIntakes.filter(i => i.status === 'taken' && i.scheduledDate >= cutoff7dStr).length;
+        taken30d = mIntakes.filter(i => i.status === 'taken' && i.scheduledDate >= cutoff30dStr).length;
+
+        const adh7d = Math.min(100, Math.round((taken7d / Math.max(1, sched7d)) * 100));
+        const adh30d = Math.min(100, Math.round((taken30d / Math.max(1, sched30d)) * 100));
+
+        // Streak calculation (consecutive days taken)
+        let streakDays = 0;
+        for (let d = 0; d < 365; d++) {
+          const dayDate = new Date(Date.now() - d * 86400000);
+          const dayStr = dayDate.toISOString().slice(0, 10);
+          const dayTaken = mIntakes.some(i => i.status === 'taken' && i.scheduledDate === dayStr);
+          if (dayTaken) {
+            streakDays++;
+          } else {
+            if (d === 0 && pendingSlot && !isSlotDueNow) {
+              continue;
+            }
+            break;
+          }
+        }
+
+        // Action buttons
+        let actionsHtml = '';
+        if (pendingSlot) {
+          actionsHtml = `
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="toggleMedIntake('${m.id}', '${pendingSlot.slot}', 'taken')" class="flex-1 py-3 px-4 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black text-xs shadow-xs active:scale-98 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span class="text-sm font-bold">✓</span>
+                <span>Taken</span>
+              </button>
+              <button onclick="toggleMedIntake('${m.id}', '${pendingSlot.slot}', 'skipped')" class="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs active:scale-98 transition flex items-center justify-center gap-1 cursor-pointer">
+                <span>⏭</span>
+                <span>Skipped</span>
+              </button>
+            </div>
+          `;
+        } else if (todayIntakes.length > 0) {
+          actionsHtml = `
+            <div class="pt-1 space-y-1.5">
+              ${todayIntakes.map(ti => {
+                const sLabel = (slots.find(s => s.slot === ti.slot) || {}).label || ti.slot;
+                const isTaken = ti.status === 'taken';
+                return `
+                  <div class="flex items-center justify-between p-2.5 rounded-xl bg-purple-50/70 border border-purple-200 text-xs">
+                    <span class="font-bold text-purple-900 flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full ${isTaken ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+                      ${sLabel}: Marked as ${isTaken ? 'Taken ✓' : 'Skipped'}
+                    </span>
+                    <button onclick="undoMedIntake('${ti.id}')" class="text-xs font-black text-purple-600 hover:text-purple-800 px-2 py-0.5 rounded-lg hover:bg-purple-100 border border-purple-200 transition cursor-pointer">
+                      Undo
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        const freqDisplay = (m.frequency || 'daily').replace('_', ' ');
+
+        return `
+          <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs space-y-3">
+            <div class="flex items-start justify-between">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-base font-black text-slate-900">${m.name}</h3>
+                  <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-purple-100 text-purple-700">${m.dosage}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 capitalize">${freqDisplay}</span>
+                </div>
+                ${m.instructions ? `<p class="text-[11px] text-slate-400 font-medium">${m.instructions}</p>` : ''}
+              </div>
+              <button onclick="openMedicationActions('${m.id}')" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Manage Medication">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-500">Next intake:</span>
+                <span class="font-black text-xs ${nextIntakeBadgeClass}">${nextIntakeText}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-500">Last intake:</span>
+                <span class="font-bold text-slate-700">${lastIntakeStr}</span>
+              </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-600 text-[11px]">
+                  <span>Adherence (7 days)</span>
+                  <span class="font-black text-slate-800">${adh7d}%</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-slate-400 h-2 rounded-full transition-all" style="width: ${adh7d}%"></div>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-600 text-[11px]">
+                  <span>Adherence (30 days)</span>
+                  <span class="font-black text-purple-700">${adh30d}%</span>
+                </div>
+                <div class="w-full bg-purple-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-[#B18AFF] h-2 rounded-full transition-all" style="width: ${adh30d}%"></div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 text-xs font-black text-amber-700 pt-0.5">
+                <span>🔥</span>
+                <span>${streakDays} day streak</span>
+              </div>
+            </div>
+
+            ${actionsHtml}
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = cardsHtml;
+    }
+
+    function openMedicationActions(medId) {
+      renderMedicationsManagerList();
+      medModal.classList.remove('hidden');
+    }
+
+    async function toggleMedIntake(medId, slot, statusToSet) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const intakes = await dbGetIntakes(activeProfileId, todayStr);
+      const existing = intakes.find(i => i.medicationId === medId && i.slot === slot);
+
+      if (existing && existing.status === statusToSet) {
+        // Toggle off
+        const db = await initDB();
+        const tx = db.transaction([STORE_INTAKES], 'readwrite');
+        tx.objectStore(STORE_INTAKES).delete(existing.id);
+        await new Promise(res => { tx.oncomplete = res; });
+        showToast('Dose record removed');
+      } else {
+        const intakeId = existing ? existing.id : `intake-${todayStr}-${medId}-${slot}`;
+        await dbPutIntake({
+          id: intakeId,
+          profileId: Number(activeProfileId),
+          medicationId: medId,
+          scheduledDate: todayStr,
+          slot,
+          status: statusToSet,
+          timestamp: new Date().toISOString()
+        });
+        showToast(statusToSet === 'taken' ? 'Dose marked as taken ✓' : 'Dose marked as skipped');
+      }
+
+      await renderMedicationsTab();
+    }
+
+    async function undoMedIntake(intakeId) {
+      const db = await initDB();
+      const tx = db.transaction([STORE_INTAKES], 'readwrite');
+      tx.objectStore(STORE_INTAKES).delete(intakeId);
+      await new Promise(res => { tx.oncomplete = res; });
+      showToast('Dose intake restored');
+      await renderMedicationsTab();
+    }
+
+    // Auto-refresh medication schedule every 30 seconds so time window triggers automatically
+    setInterval(() => {
+      if (activeProfileId && !document.hidden) {
+        renderMedicationsTab();
+      }
+    }, 30000);
+  </script>
+
+  <script>
+    // Clinical Engine, Calculations & Refresh All Views
+    async function refreshAllViews() {
+      if (!activeProfileId) return;
+      const active = profiles.find(p => Number(p.id) === activeProfileId);
+      if (active) {
+        document.getElementById('header-profile-name').textContent = active.name;
+        document.getElementById('header-avatar').textContent = (active.name || 'U').slice(0, 1).toUpperCase();
+        document.getElementById('dash-greeting-sub').textContent = `Patient: ${active.name} • ${active.condition || 'General Health'}`;
+      }
+
+      const vitals = await dbGetVitals(activeProfileId);
+      await renderDashboardVitalTiles(vitals);
+      renderTrendsCharts(vitals);
+      await renderHistoryFeed(vitals);
+      renderDoctorSummary(vitals);
+      await renderMedicationsTab();
+    }
+
+    // AHA/ACC Blood Pressure Classification
+    function classifyBP(sys, dia) {
+      if (sys == null || dia == null) return { stage: 'Unknown', color: 'slate', badgeBg: 'bg-slate-100', badgeText: 'text-slate-700' };
+      if (sys > 180 || dia > 120) return { stage: 'Hypertensive Crisis', color: 'red', badgeBg: 'bg-red-100', badgeText: 'text-red-800' };
+      if (sys >= 140 || dia >= 90) return { stage: 'Stage 2 Hypertension', color: 'rose', badgeBg: 'bg-rose-100', badgeText: 'text-rose-800' };
+      if (sys >= 130 || dia >= 80) return { stage: 'Stage 1 Hypertension', color: 'orange', badgeBg: 'bg-orange-100', badgeText: 'text-orange-800' };
+      if (sys >= 120 && dia < 80) return { stage: 'Elevated', color: 'yellow', badgeBg: 'bg-yellow-100', badgeText: 'text-yellow-800' };
+      return { stage: 'Normal', color: 'emerald', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-800' };
+    }
+
+    // Dynamic Vital Metric Tiles (2-Column Grid matching Screenshot 2, sorted dynamically by latest updated reading)
+    async function renderDashboardVitalTiles(vitals) {
+      const container = document.getElementById('dash-vital-tiles-grid');
+      if (!container) return;
+
+      const now = Date.now();
+      const cutoff7d = now - (7 * 24 * 3600 * 1000);
+      const cutoff30d = now - (30 * 24 * 3600 * 1000);
+
+      const VITAL_CONFIGS = [
+        {
+          id: 'weight',
+          label: 'WEIGHT',
+          unit: 'kg',
+          iconSvg: `<svg class="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="m12 12 2-3"/><path d="M12 7v1"/></svg>`,
+          getValue: v => v.weight,
+          format: v => (typeof v === 'number' ? v.toFixed(1) : v),
+          isLowerBetter: null
+        },
+        {
+          id: 'sys',
+          label: 'BP (SYS)',
+          unit: 'mmHg',
+          iconSvg: `<svg class="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+          getValue: v => v.systolic,
+          format: v => Math.round(v),
+          isLowerBetter: true
+        },
+        {
+          id: 'dia',
+          label: 'BP (DIA)',
+          unit: 'mmHg',
+          iconSvg: `<svg class="w-4 h-4 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+          getValue: v => v.diastolic,
+          format: v => Math.round(v),
+          isLowerBetter: true
+        },
+        {
+          id: 'pulse',
+          label: 'RESTING HEART RATE',
+          unit: 'BPM',
+          iconSvg: `<svg class="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+          getValue: v => v.pulse,
+          format: v => Math.round(v),
+          isLowerBetter: true
+        },
+        {
+          id: 'glucose',
+          label: 'BLOOD GLUCOSE',
+          unit: 'mg/dL',
+          iconSvg: `<svg class="w-4 h-4 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+          getValue: v => v.glucose,
+          format: v => Math.round(v),
+          isLowerBetter: true
+        },
+        {
+          id: 'spo2',
+          label: 'OXYGEN SATURATION',
+          unit: '%',
+          iconSvg: `<svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`,
+          getValue: v => v.spo2,
+          format: v => Math.round(v),
+          isLowerBetter: false
+        },
+        {
+          id: 'temp',
+          label: 'BODY TEMPERATURE',
+          unit: '°F',
+          iconSvg: `<svg class="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>`,
+          getValue: v => v.temp,
+          format: v => (typeof v === 'number' ? v.toFixed(1) : v),
+          isLowerBetter: null
+        },
+        {
+          id: 'waist',
+          label: 'WAIST CIRCUMFERENCE',
+          unit: 'cm',
+          iconSvg: `<svg class="w-4 h-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="8" width="18" height="8" rx="2"/><path d="M7 8v8"/><path d="M11 8v4"/><path d="M15 8v8"/></svg>`,
+          getValue: v => v.waist,
+          format: v => (typeof v === 'number' ? v.toFixed(1) : v),
+          isLowerBetter: true
+        }
+      ];
+
+      const tilesData = VITAL_CONFIGS.map(cfg => {
+        const matching = vitals
+          .filter(v => cfg.getValue(v) != null && !isNaN(cfg.getValue(v)))
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        const latestRec = matching[0] || null;
+        const prevRec = matching[1] || null;
+        const latestTimestamp = latestRec ? new Date(latestRec.timestamp).getTime() : 0;
+        const latestVal = latestRec ? cfg.getValue(latestRec) : null;
+
+        // Trend Arrow calculation
+        let arrowHtml = '';
+        if (latestVal != null && prevRec != null) {
+          const prevVal = cfg.getValue(prevRec);
+          const diff = latestVal - prevVal;
+          if (Math.abs(diff) > 0.001) {
+            if (diff > 0) {
+              let color = 'text-slate-400';
+              if (cfg.isLowerBetter === true) color = 'text-rose-500';
+              else if (cfg.isLowerBetter === false) color = 'text-emerald-500';
+              arrowHtml = `<span class="${color} text-xs font-black inline-flex items-center ml-1" title="Up from previous ${cfg.format(prevVal)}">↑</span>`;
+            } else {
+              let color = 'text-slate-400';
+              if (cfg.isLowerBetter === true) color = 'text-emerald-500';
+              else if (cfg.isLowerBetter === false) color = 'text-rose-500';
+              arrowHtml = `<span class="${color} text-xs font-black inline-flex items-center ml-1" title="Down from previous ${cfg.format(prevVal)}">↓</span>`;
+            }
+          } else {
+            arrowHtml = `<span class="text-slate-400 text-xs font-bold inline-flex items-center ml-1" title="Unchanged">→</span>`;
+          }
+        }
+
+        // 7-day trend
+        const recs7d = matching.filter(r => new Date(r.timestamp).getTime() >= cutoff7d);
+        let trend7dText = '--';
+        if (recs7d.length > 0) {
+          const sum7d = recs7d.reduce((acc, r) => acc + cfg.getValue(r), 0);
+          const avg7d = sum7d / recs7d.length;
+          const delta = latestVal - avg7d;
+          const deltaStr = Math.abs(delta) < 0.05 ? '0' : (delta > 0 ? `+${cfg.format(delta)}` : `${cfg.format(delta)}`);
+          trend7dText = `${cfg.format(avg7d)} (${deltaStr})`;
+        }
+
+        // 30-day baseline
+        const recs30d = matching.filter(r => new Date(r.timestamp).getTime() >= cutoff30d);
+        let baseline30dText = '--';
+        if (recs30d.length > 0) {
+          const sum30d = recs30d.reduce((acc, r) => acc + cfg.getValue(r), 0);
+          const avg30d = sum30d / recs30d.length;
+          baseline30dText = `${cfg.format(avg30d)}`;
+        }
+
+        return {
+          cfg,
+          latestVal,
+          latestTimestamp,
+          arrowHtml,
+          trend7dText,
+          baseline30dText
+        };
+      });
+
+      // DYNAMIC SORTING REQUIREMENT: The tile that is latest updated with reading appears at the top!
+      tilesData.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
+
+      container.innerHTML = tilesData.map(item => {
+        const valFormatted = item.latestVal != null ? item.cfg.format(item.latestVal) : '--';
+        return `
+          <div class="bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-2 hover:border-purple-200 transition">
+            <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <span class="truncate">${item.cfg.label}</span>
+              <span class="shrink-0 ml-1">${item.cfg.iconSvg}</span>
+            </div>
+            <div class="flex items-baseline gap-1.5 flex-wrap">
+              <span class="text-2xl font-black text-slate-900 tracking-tight">${valFormatted}</span>
+              <span class="text-xs font-bold text-slate-400">${item.cfg.unit}</span>
+              ${item.arrowHtml}
+            </div>
+            <div class="pt-1.5 border-t border-slate-100 text-[10px] space-y-0.5">
+              <div class="font-bold text-slate-600 truncate">
+                7-day trend: <span class="font-black text-slate-800">${item.trend7dText}</span>
+              </div>
+              <div class="font-semibold text-slate-400 truncate">
+                30d: <span class="font-bold text-slate-600">${item.baseline30dText}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 7-Day AM/PM Blood Pressure Summary Tiles & Morning Surge Alert
+      const records7d = vitals.filter(v => new Date(v.timestamp).getTime() >= cutoff7d && v.systolic != null);
+      const am7d = records7d.filter(v => { const h = new Date(v.timestamp).getHours(); return h >= 5 && h < 12; });
+      const pm7d = records7d.filter(v => { const h = new Date(v.timestamp).getHours(); return h >= 18 && h < 24; });
+
+      let amAvgSys = null, pmAvgSys = null;
+      if (am7d.length) {
+        amAvgSys = Math.round(am7d.reduce((acc, v) => acc + v.systolic, 0) / am7d.length);
+        const amAvgDia = Math.round(am7d.reduce((acc, v) => acc + v.diastolic, 0) / am7d.length);
+        const amEl = document.getElementById('dash-7d-am-val');
+        if (amEl) amEl.textContent = `${amAvgSys} / ${amAvgDia}`;
+      } else {
+        const amEl = document.getElementById('dash-7d-am-val');
+        if (amEl) amEl.textContent = '-- / --';
+      }
+
+      if (pm7d.length) {
+        pmAvgSys = Math.round(pm7d.reduce((acc, v) => acc + v.systolic, 0) / pm7d.length);
+        const pmAvgDia = Math.round(pm7d.reduce((acc, v) => acc + v.diastolic, 0) / pm7d.length);
+        const pmEl = document.getElementById('dash-7d-pm-val');
+        if (pmEl) pmEl.textContent = `${pmAvgSys} / ${pmAvgDia}`;
+      } else {
+        const pmEl = document.getElementById('dash-7d-pm-val');
+        if (pmEl) pmEl.textContent = '-- / --';
+      }
+
+      const surgeAlert = document.getElementById('morning-surge-alert');
+      if (surgeAlert) {
+        if (amAvgSys != null && pmAvgSys != null) {
+          const delta = amAvgSys - pmAvgSys;
+          if (delta >= 20) {
+            surgeAlert.classList.remove('hidden');
+            const alertText = document.getElementById('morning-surge-text');
+            if (alertText) alertText.textContent = `AM average is ${delta} mmHg higher than PM average. Discuss with physician.`;
+          } else {
+            surgeAlert.classList.add('hidden');
+          }
+        } else {
+          surgeAlert.classList.add('hidden');
+        }
+      }
+    }
+
+    function renderTrendsCharts(vitals) {
+      // 1. BP Chart
+      const bpFiltered = filterRecordsByRange(vitals.filter(v => v.systolic != null && v.diastolic != null), trendBpRange).reverse();
+      const sysPoints = bpFiltered.map(v => ({ val: v.systolic, date: v.timestamp }));
+      const diaPoints = bpFiltered.map(v => ({ val: v.diastolic, date: v.timestamp }));
+
+      document.getElementById('chart-bp-container').innerHTML = renderLightLineChart({
+        series: [
+          { stroke: '#F43F5E', fill: '#F43F5E', points: sysPoints },
+          { stroke: '#0284C7', fill: '#0284C7', points: diaPoints }
+        ]
+      });
+
+      if (bpFiltered.length) {
+        const sysAvg = Math.round(bpFiltered.reduce((acc, v) => acc + v.systolic, 0) / bpFiltered.length);
+        const diaAvg = Math.round(bpFiltered.reduce((acc, v) => acc + v.diastolic, 0) / bpFiltered.length);
+        const inTargetCount = bpFiltered.filter(v => v.systolic < 130 && v.diastolic < 80).length;
+        const inTargetPct = Math.round((inTargetCount / bpFiltered.length) * 100);
+
+        document.getElementById('bp-stat-sys-avg').textContent = `${sysAvg} mmHg`;
+        document.getElementById('bp-stat-dia-avg').textContent = `${diaAvg} mmHg`;
+        document.getElementById('bp-stat-target-badge').textContent = `${inTargetPct}% In Target (<130/80)`;
+      }
+
+      // 2. Glucose Chart
+      const glucFiltered = filterRecordsByRange(vitals.filter(v => v.glucose != null), trendGlucRange).reverse();
+      const glucPoints = glucFiltered.map(v => ({ val: v.glucose, date: v.timestamp }));
+      document.getElementById('chart-gluc-container').innerHTML = renderLightLineChart({
+        series: [{ stroke: '#0D9488', fill: '#0D9488', points: glucPoints }]
+      });
+      if (glucFiltered.length) {
+        const avg = Math.round(glucFiltered.reduce((a, b) => a + b.glucose, 0) / glucFiltered.length);
+        document.getElementById('gluc-stat-avg').textContent = `${avg} mg/dL`;
+      }
+
+      // 3. Weight Chart
+      const weightFiltered = filterRecordsByRange(vitals.filter(v => v.weight != null), trendWeightRange).reverse();
+      const weightPoints = weightFiltered.map(v => ({ val: v.weight, date: v.timestamp }));
+      document.getElementById('chart-weight-container').innerHTML = renderLightLineChart({
+        series: [{ stroke: '#B18AFF', fill: '#B18AFF', points: weightPoints }]
+      });
+      if (weightFiltered.length >= 2) {
+        const delta = (weightFiltered[weightFiltered.length - 1].weight - weightFiltered[0].weight).toFixed(1);
+        document.getElementById('weight-stat-delta').textContent = `${delta > 0 ? '+' : ''}${delta} kg`;
+      }
+
+      // 4. Pulse Chart
+      const pulseFiltered = filterRecordsByRange(vitals.filter(v => v.pulse != null), trendPulseRange).reverse();
+      const pulsePoints = pulseFiltered.map(v => ({ val: v.pulse, date: v.timestamp }));
+      document.getElementById('chart-pulse-container').innerHTML = renderLightLineChart({
+        series: [{ stroke: '#0284C7', fill: '#0284C7', points: pulsePoints }]
+      });
+    }
+
+    // Trend Range Filter Click Listeners
+    document.querySelectorAll('.trend-bp-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        trendBpRange = b.getAttribute('data-range');
+        document.querySelectorAll('.trend-bp-btn').forEach(btn => btn.className = 'trend-bp-btn px-2 py-0.5 rounded-lg text-slate-600 transition');
+        b.className = 'trend-bp-btn px-2 py-0.5 rounded-lg range-pill-active transition';
+        dbGetVitals(activeProfileId).then(renderTrendsCharts);
+      });
+    });
+    document.querySelectorAll('.trend-gluc-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        trendGlucRange = b.getAttribute('data-range');
+        document.querySelectorAll('.trend-gluc-btn').forEach(btn => btn.className = 'trend-gluc-btn px-2 py-0.5 rounded-lg text-slate-600 transition');
+        b.className = 'trend-gluc-btn px-2 py-0.5 rounded-lg range-pill-active transition';
+        dbGetVitals(activeProfileId).then(renderTrendsCharts);
+      });
+    });
+    document.querySelectorAll('.trend-weight-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        trendWeightRange = b.getAttribute('data-range');
+        document.querySelectorAll('.trend-weight-btn').forEach(btn => btn.className = 'trend-weight-btn px-2 py-0.5 rounded-lg text-slate-600 transition');
+        b.className = 'trend-weight-btn px-2 py-0.5 rounded-lg range-pill-active transition';
+        dbGetVitals(activeProfileId).then(renderTrendsCharts);
+      });
+    });
+    document.querySelectorAll('.trend-pulse-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        trendPulseRange = b.getAttribute('data-range');
+        document.querySelectorAll('.trend-pulse-btn').forEach(btn => btn.className = 'trend-pulse-btn px-2 py-0.5 rounded-lg text-slate-600 transition');
+        b.className = 'trend-pulse-btn px-2 py-0.5 rounded-lg range-pill-active transition';
+        dbGetVitals(activeProfileId).then(renderTrendsCharts);
+      });
+    });
+
+    // History Feed (v6.1 Supporting Vitals, Moods, and Meds)
+    async function renderHistoryFeed(vitals) {
+      const feed = document.getElementById('history-feed');
+      const allMoods = await dbGetMoods(activeProfileId);
+      const allIntakes = await dbGetIntakes(activeProfileId);
+      const allMeds = await dbGetMedications(activeProfileId);
+      const medMap = Object.fromEntries(allMeds.map(m => [m.id, m]));
+
+      // Combine into unified entries
+      let entries = [];
+
+      if (currentHistoryFilter === 'all' || currentHistoryFilter === 'bp' || currentHistoryFilter === 'glucose') {
+        let vList = vitals;
+        if (currentHistoryFilter === 'bp') vList = vitals.filter(v => v.systolic != null);
+        else if (currentHistoryFilter === 'glucose') vList = vitals.filter(v => v.glucose != null);
+        vList.forEach(v => entries.push({ type: 'vital', date: new Date(v.timestamp), data: v }));
+      }
+
+      if (currentHistoryFilter === 'all' || currentHistoryFilter === 'meds') {
+        allIntakes.forEach(i => entries.push({ type: 'intake', date: new Date(i.timestamp), data: i }));
+      }
+
+      if (currentHistoryFilter === 'all' || currentHistoryFilter === 'mood') {
+        allMoods.forEach(m => entries.push({ type: 'mood', date: new Date(m.timestamp), data: m }));
+      }
+
+      entries.sort((a, b) => b.date - a.date);
+
+      if (!entries.length) {
+        feed.innerHTML = '<div class="text-xs text-slate-400 text-center py-6">No historical entries found.</div>';
+        return;
+      }
+
+      feed.innerHTML = entries.map(item => {
+        const d = item.date;
+        const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (item.type === 'mood') {
+          const m = item.data;
+          const tagsStr = [m.energy, ...(m.tags || [])].filter(Boolean).join(' • ');
+          return `
+            <div class="p-3 rounded-2xl bg-purple-50/40 border border-purple-200 flex items-start justify-between shadow-xs">
+              <div class="space-y-1">
+                <div class="text-[10px] font-extrabold uppercase tracking-wider text-purple-600">${dateStr} • ${timeStr} • MOOD & MIND</div>
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">${MOOD_EMOJIS[m.score] || '🙂'}</span>
+                  <div>
+                    <span class="font-black text-sm text-slate-900">${m.label}</span>
+                    <span class="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full ml-1.5">Score ${m.score}/5</span>
+                  </div>
+                </div>
+                ${tagsStr ? `<div class="text-xs font-semibold text-purple-700">${tagsStr}</div>` : ''}
+                ${m.notes ? `<div class="text-[11px] text-slate-500 italic">${m.notes}</div>` : ''}
+              </div>
+              <button onclick="handleDeleteMood(${m.id})" class="cursor-pointer text-rose-500 hover:text-rose-700 text-xs font-bold p-1" title="Delete">
+                ✕
+              </button>
+            </div>
+          `;
+        }
+
+        if (item.type === 'intake') {
+          const i = item.data;
+          const med = medMap[i.medicationId] || { name: 'Medication', dosage: '' };
+          const badgeClass = i.status === 'taken' ? 'bg-emerald-100 text-emerald-800' : (i.status === 'late' ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700');
+          return `
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between shadow-xs">
+              <div class="space-y-0.5">
+                <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${dateStr} • ${timeStr} • MEDICATION DOSE</div>
+                <div class="font-black text-sm text-slate-900 flex items-center gap-1.5">
+                  <span>💊 ${med.name} ${med.dosage}</span>
+                  <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${badgeClass}">${i.status}</span>
+                </div>
+                <div class="text-xs text-slate-500 font-medium">Slot: ${i.slot}</div>
+                ${i.notes ? `<div class="text-[11px] text-slate-500 italic mt-0.5">${i.notes}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        // Vital Record
+        const v = item.data;
+        let detailHtml = '';
+        if (v.systolic != null) {
+          const cat = classifyBP(v.systolic, v.diastolic);
+          detailHtml += `<div class="font-black text-sm text-slate-900">${v.systolic}/${v.diastolic} mmHg <span class="text-xs font-bold text-slate-400">(${v.pulse || '--'} bpm)</span> <span class="text-[10px] font-extrabold ${cat.badgeBg} ${cat.badgeText} px-2 py-0.5 rounded-full ml-1.5">${cat.stage}</span></div>`;
+        }
+        if (v.glucose != null) {
+          detailHtml += `<div class="font-extrabold text-xs text-teal-800 mt-1">Glucose: ${v.glucose} mg/dL (${v.glucoseType || 'Routine'})</div>`;
+        }
+        if (v.weight != null) {
+          detailHtml += `<div class="font-bold text-xs text-purple-800 mt-0.5">Weight: ${v.weight} kg</div>`;
+        }
+        if (v.spo2 != null) {
+          detailHtml += `<div class="font-bold text-xs text-emerald-800 mt-0.5">SpO2: ${v.spo2}%</div>`;
+        }
+        if (v.temp != null) {
+          detailHtml += `<div class="font-bold text-xs text-slate-700 mt-0.5">Temp: ${v.temp}°F</div>`;
+        }
+        if (v.waist != null) {
+          detailHtml += `<div class="font-bold text-xs text-slate-700 mt-0.5">Waist: ${v.waist} cm</div>`;
+        }
+        if (v.notes) {
+          detailHtml += `<div class="text-[11px] text-slate-500 italic mt-1">${v.notes}</div>`;
+        }
+
+        return `
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between shadow-xs">
+            <div class="space-y-0.5">
+              <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${dateStr} • ${timeStr} ${v.medTiming ? '• ' + v.medTiming : ''}</div>
+              ${detailHtml}
+            </div>
+            <button onclick="handleDeleteVital(${v.id})" class="cursor-pointer text-rose-500 hover:text-rose-700 text-xs font-bold p-1" title="Delete">
+              ✕
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleDeleteMood(id) {
+      if (confirm('Delete this mood entry?')) {
+        await dbDeleteMood(id);
+        showToast('Mood entry deleted');
+        await refreshAllViews();
+      }
+    }
+
+    async function handleDeleteVital(id) {
+      await dbDeleteVital(id);
+      showToast('Entry removed');
+      await refreshAllViews();
+    }
+
+    document.querySelectorAll('.hist-filter').forEach(b => {
+      b.addEventListener('click', () => {
+        currentHistoryFilter = b.getAttribute('data-f');
+        document.querySelectorAll('.hist-filter').forEach(btn => btn.className = 'hist-filter px-2.5 py-1 rounded-lg text-slate-600');
+        b.className = 'hist-filter px-2.5 py-1 rounded-lg range-pill-active';
+        dbGetVitals(activeProfileId).then(renderHistoryFeed);
+      });
+    });
+
+    // Physician Consultation Summary Report
+    async function renderDoctorSummary(vitals) {
+      const active = profiles.find(p => Number(p.id) === activeProfileId);
+      if (!active) return;
+
+      document.getElementById('doc-patient-name').textContent = `Patient: ${active.name}`;
+      document.getElementById('doc-patient-details').textContent = `Age: ${active.age || 'N/A'} • ${active.gender || 'Not Specified'} ${active.heightCm ? '• Height: ' + active.heightCm + ' cm' : ''} • Conditions: ${active.condition || 'None reported'}`;
+      document.getElementById('doc-notes-text').textContent = active.notes || 'No general notes recorded.';
+
+      const rangeDays = parseInt(document.getElementById('doc-range-select').value, 10);
+      const cutoff = new Date(Date.now() - rangeDays * 24 * 3600 * 1000);
+      const filtered = vitals.filter(v => new Date(v.timestamp) >= cutoff);
+      const bpList = filtered.filter(v => v.systolic != null && v.diastolic != null);
+
+      // 1. Overall & AM/PM Segregation
+      if (bpList.length) {
+        const sysAvg = Math.round(bpList.reduce((a, b) => a + b.systolic, 0) / bpList.length);
+        const diaAvg = Math.round(bpList.reduce((a, b) => a + b.diastolic, 0) / bpList.length);
+        document.getElementById('doc-bp-overall-badge').textContent = `Avg: ${sysAvg} / ${diaAvg} mmHg`;
+
+        const ams = bpList.filter(v => { const h = new Date(v.timestamp).getHours(); return h >= 5 && h < 12; });
+        const pms = bpList.filter(v => { const h = new Date(v.timestamp).getHours(); return h >= 18 && h < 24; });
+
+        let amSys = null, pmSys = null;
+        if (ams.length) {
+          amSys = Math.round(ams.reduce((a, b) => a + b.systolic, 0) / ams.length);
+          const amDia = Math.round(ams.reduce((a, b) => a + b.diastolic, 0) / ams.length);
+          document.getElementById('doc-am-avg-val').textContent = `${amSys} / ${amDia}`;
+          document.getElementById('doc-am-count').textContent = `${ams.length} tests`;
+        } else {
+          document.getElementById('doc-am-avg-val').textContent = '-- / --';
+          document.getElementById('doc-am-count').textContent = '0 tests';
+        }
+
+        if (pms.length) {
+          pmSys = Math.round(pms.reduce((a, b) => a + b.systolic, 0) / pms.length);
+          const pmDia = Math.round(pms.reduce((a, b) => a + b.diastolic, 0) / pms.length);
+          document.getElementById('doc-pm-avg-val').textContent = `${pmSys} / ${pmDia}`;
+          document.getElementById('doc-pm-count').textContent = `${pms.length} tests`;
+        } else {
+          document.getElementById('doc-pm-avg-val').textContent = '-- / --';
+          document.getElementById('doc-pm-count').textContent = '0 tests';
+        }
+
+        if (amSys != null && pmSys != null) {
+          const delta = amSys - pmSys;
+          document.getElementById('doc-surge-val').textContent = `${delta > 0 ? '+' : ''}${delta} mmHg`;
+          if (delta >= 20) {
+            document.getElementById('doc-surge-status').textContent = 'Surge Alert (≥20)';
+            document.getElementById('doc-surge-status').className = 'text-[9px] font-bold text-rose-600 block';
+          } else {
+            document.getElementById('doc-surge-status').textContent = 'Normal';
+            document.getElementById('doc-surge-status').className = 'text-[9px] font-bold text-emerald-600 block';
+          }
+        } else {
+          document.getElementById('doc-surge-val').textContent = '-- mmHg';
+          document.getElementById('doc-surge-status').textContent = 'Normal';
+        }
+      } else {
+        document.getElementById('doc-bp-overall-badge').textContent = 'Avg: -- / -- mmHg';
+        document.getElementById('doc-am-avg-val').textContent = '-- / --';
+        document.getElementById('doc-pm-avg-val').textContent = '-- / --';
+        document.getElementById('doc-surge-val').textContent = '-- mmHg';
+      }
+
+      // 2. Stage Distribution Breakdown
+      document.getElementById('doc-total-readings-count').textContent = `${bpList.length} Total Readings`;
+      let nNorm = 0, nElev = 0, nStg1 = 0, nStg2 = 0, nCris = 0;
+      bpList.forEach(v => {
+        const cat = classifyBP(v.systolic, v.diastolic);
+        if (cat.stage === 'Normal') nNorm++;
+        else if (cat.stage === 'Elevated') nElev++;
+        else if (cat.stage === 'Stage 1 Hypertension') nStg1++;
+        else if (cat.stage === 'Stage 2 Hypertension') nStg2++;
+        else if (cat.stage === 'Hypertensive Crisis') nCris++;
+      });
+      const total = bpList.length || 1;
+      const pNorm = Math.round((nNorm / total) * 100);
+      const pElev = Math.round((nElev / total) * 100);
+      const pStg1 = Math.round((nStg1 / total) * 100);
+      const pStg2 = Math.round((nStg2 / total) * 100);
+      const pCris = Math.round((nCris / total) * 100);
+
+      document.getElementById('bar-stage-normal').style.width = `${pNorm}%`;
+      document.getElementById('bar-stage-elevated').style.width = `${pElev}%`;
+      document.getElementById('bar-stage-stg1').style.width = `${pStg1}%`;
+      document.getElementById('bar-stage-stg2').style.width = `${pStg2}%`;
+      document.getElementById('bar-stage-crisis').style.width = `${pCris}%`;
+
+      document.getElementById('pct-normal').textContent = `${pNorm}%`;
+      document.getElementById('pct-elevated').textContent = `${pElev}%`;
+      document.getElementById('pct-stg1').textContent = `${pStg1}%`;
+      document.getElementById('pct-stg2').textContent = `${pStg2}%`;
+      document.getElementById('pct-crisis').textContent = `${pCris}%`;
+
+      // 3. Medication Compliance Table
+      const meds = await dbGetMedications(activeProfileId);
+      const allIntakes = await dbGetIntakes(activeProfileId);
+      const intakeCutoff = allIntakes.filter(i => new Date(i.timestamp) >= cutoff);
+
+      const medContainer = document.getElementById('doc-medications-table-container');
+      if (!meds.length) {
+        medContainer.innerHTML = '<div class="text-xs text-slate-400 italic">No prescribed medications recorded.</div>';
+        document.getElementById('doc-compliance-rate-badge').textContent = '100% Adherence';
+      } else {
+        let totalSched = 0, totalTaken = 0;
+        const rows = meds.map(m => {
+          const mIntakes = intakeCutoff.filter(i => i.medicationId === m.id);
+          const mTaken = mIntakes.filter(i => i.status === 'taken').length;
+          const mTotal = mIntakes.length || 1;
+          totalSched += mTotal;
+          totalTaken += mTaken;
+          const rate = Math.round((mTaken / mTotal) * 100);
+
+          return `
+            <tr class="border-b border-slate-100 text-xs">
+              <td class="py-2 font-bold text-slate-800">${m.name} ${m.dosage}</td>
+              <td class="py-2 text-slate-500 capitalize">${m.frequency}</td>
+              <td class="py-2 text-slate-600">${m.instructions || 'Routine'}</td>
+              <td class="py-2 text-right font-extrabold ${rate >= 80 ? 'text-emerald-700' : 'text-amber-700'}">${rate}%</td>
+            </tr>
+          `;
+        }).join('');
+
+        const overallAdherence = totalSched > 0 ? Math.round((totalTaken / totalSched) * 100) : 100;
+        document.getElementById('doc-compliance-rate-badge').textContent = `${overallAdherence}% Adherence`;
+
+        medContainer.innerHTML = `
+          <table class="w-full text-left">
+            <thead>
+              <tr class="text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-200">
+                <th class="py-1.5">Medication</th>
+                <th class="py-1.5">Schedule</th>
+                <th class="py-1.5">Instructions</th>
+                <th class="py-1.5 text-right">Adherence</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      }
+
+      // 4. Metabolic & Body Snapshot
+      const fastings = filtered.filter(v => v.glucose != null && v.glucoseType === 'Fasting');
+      const pps = filtered.filter(v => v.glucose != null && v.glucoseType === 'Post-Prandial');
+      const latestW = filtered.find(v => v.weight != null);
+      const latestO2 = filtered.find(v => v.spo2 != null);
+
+      document.getElementById('doc-gluc-fast-snap').textContent = fastings.length ? `${Math.round(fastings.reduce((a, b) => a + b.glucose, 0) / fastings.length)} mg/dL` : '-- mg/dL';
+      document.getElementById('doc-gluc-pp-snap').textContent = pps.length ? `${Math.round(pps.reduce((a, b) => a + b.glucose, 0) / pps.length)} mg/dL` : '-- mg/dL';
+      document.getElementById('doc-weight-spo2-snap').textContent = `${latestW ? latestW.weight + ' kg' : '-- kg'} • ${latestO2 ? latestO2.spo2 + '%' : '--%'}`;
+    }
+
+    document.getElementById('doc-range-select').addEventListener('change', () => {
+      dbGetVitals(activeProfileId).then(renderDoctorSummary);
+    });
+
+    // CSV & JSON Data Export / Restore
+    document.getElementById('btn-export-csv').addEventListener('click', async () => {
+      const records = await dbGetVitals(activeProfileId);
+      if (!records.length) { showToast('No records to export'); return; }
+      const active = profiles.find(p => Number(p.id) === activeProfileId) || { name: 'Demo' };
+
+      let csv = "Patient,Gender,Age,Date,Time,Systolic(mmHg),Diastolic(mmHg),Pulse(bpm),Glucose(mg/dL),Glucose_Context,Weight(kg),SpO2(%),Temp(F),Waist(cm),Medication_Timing,Notes\r\n";
+      records.forEach(r => {
+        const d = new Date(r.timestamp);
+        const dateStr = d.toISOString().split('T')[0];
+        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        csv += `"${active.name}","${active.gender || ''}","${active.age || ''}","${dateStr}","${timeStr}",${r.systolic || ''},${r.diastolic || ''},${r.pulse || ''},${r.glucose || ''},"${r.glucoseType || ''}",${r.weight || ''},${r.spo2 || ''},${r.temp || ''},${r.waist || ''},"${r.medTiming || ''}","${(r.notes || '').replace(/"/g, '""')}"\r\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vitals_tracker_${active.name}_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      showToast('CSV downloaded');
+    });
+
+    document.getElementById('btn-backup-json').addEventListener('click', async () => {
+      const allVitals = await dbGetVitals(null);
+      const allProfiles = await dbGetProfiles();
+      const allMeds = [];
+      const allIntakes = [];
+      const allMoods = [];
+      for (const p of allProfiles) {
+        const m = await dbGetMedications(p.id);
+        allMeds.push(...m);
+        const i = await dbGetIntakes(p.id);
+        allIntakes.push(...i);
+        const md = await dbGetMoods(p.id);
+        allMoods.push(...md);
+      }
+      const backup = {
+        app: "Vitals Tracker",
+        version: "6.3",
+        exportDate: new Date().toISOString(),
+        profiles: allProfiles,
+        vitals: allVitals,
+        medications: allMeds,
+        medicationIntakes: allIntakes,
+        moods: allMoods
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vitals_tracker_backup_v6.3_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      showToast('JSON Backup (v6.3) downloaded');
+    });
+
+    document.getElementById('input-restore-json').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data.vitals && Array.isArray(data.vitals)) {
+            const db = await initDB();
+            const tx = db.transaction([STORE_PROFILES, STORE_VITALS, STORE_MEDICATIONS, STORE_INTAKES], 'readwrite');
+            if (data.profiles) data.profiles.forEach(p => tx.objectStore(STORE_PROFILES).put(p));
+            data.vitals.forEach(v => tx.objectStore(STORE_VITALS).put(v));
+            if (data.medications) data.medications.forEach(m => tx.objectStore(STORE_MEDICATIONS).put(m));
+            if (data.medicationIntakes) data.medicationIntakes.forEach(i => tx.objectStore(STORE_INTAKES).put(i));
+            
+            tx.oncomplete = async () => {
+              if (data.moods && Array.isArray(data.moods)) {
+                const txMood = db.transaction([STORE_MOODS], 'readwrite');
+                const os = txMood.objectStore(STORE_MOODS);
+                data.moods.forEach(m => {
+                  delete m.id;
+                  os.add(m);
+                });
+              }
+              showToast('Backup restored successfully!');
+              profiles = await dbGetProfiles();
+              if (profiles.length) {
+                activeProfileId = profiles[0].id;
+                hideProfileGate();
+                await refreshAllViews();
+              }
+            };
+          } else {
+            showToast('Invalid backup file');
+          }
+        } catch (err) {
+          showToast('Failed to parse file');
+        }
+      };
+      reader.readAsText(file);
+    });
+  </script>
+
+  <script>
+    // App Bootstrap & Gated Entry Check
+    window.addEventListener('DOMContentLoaded', async () => {
+      await initDB();
+      profiles = await dbGetProfiles();
+      
+      const sessionActive = sessionStorage.getItem('vt_active_session');
+      if (sessionActive && profiles.some(p => Number(p.id) === Number(sessionActive))) {
+        activeProfileId = Number(sessionActive);
+        hideProfileGate();
+        await ensureDefaultMedications(activeProfileId);
+        await refreshAllViews();
+      } else {
+        // GATED ENTRY: Always present Profile Selection screen on app startup
+        showProfileGate();
+      }
+    });
+  </script>
+
+</body>
+</html>
