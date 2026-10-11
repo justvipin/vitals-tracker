@@ -36,7 +36,7 @@ The primary clinical focus is **hypertension and metabolic monitoring**, featuri
     1. **Today Overview & Lead Status Sentence:** Dashboard opens with a clear headline summarizing today's vitals status and pending tasks (e.g., *"Blood pressure is within target range • 1 medication dose pending today"*).
     2. **Today's Action Strip ("Medication Quick-Add"):** Prominent daily dose checklist on the home screen enabling one-tap intake recording (`Taken` / `Skip` / `Late`) with compliance badges.
     3. **Metric Tiles with 7-Day Sparkline Trends:** Clean, rounded cards for each vital displaying latest value, unit, timestamp, clinical category badge, and an inline SVG mini trend line.
-    4. **Bottom Slide-Over Quick-Entry Drawer:** Seamless bottom sheet for rapid data entry with context-sensitive inputs (`medTiming` strictly filtered to BP & Glucose).
+    4. **Log Chooser Drawer ("What would you like to record?"):** HealthLog-aligned capture picker offering targeted quick-entry flows for **Measurement** (7 vitals), **Medication** (dose intake logging), and **Mood** (5-level score, energy state, and context tags). Context-sensitive `medTiming` remains strictly filtered to BP & Glucose.
     5. **Multi-Range Trends View:** Deep-dive tabs (7d, 14d, 30d, 90d, All) featuring clinical reference bands (Normal, Elevated, Stage 1/2) shaded behind trend charts.
     6. **Physician Consultation Sheet:** High-contrast, tabular clinical summary ready for A4/Letter print or PDF export.
 - **Continuous App Versioning & Rollback Protocol:**
@@ -181,17 +181,33 @@ interface MedicationIntakeEvent {
 }
 ```
 
+### Mood & Wellbeing Entity (`MoodRecord`)
+
+```typescript
+interface MoodRecord {
+  id?: number;                // Primary Key (auto-increment)
+  profileId: number;          // Associated UserProfile ID
+  timestamp: string;          // ISO-8601 Timestamp
+  score: 1 | 2 | 3 | 4 | 5;   // 1: Terrible, 2: Low, 3: Okay, 4: Good, 5: Great
+  label: "Terrible" | "Low" | "Okay" | "Good" | "Great";
+  energy?: "Calm" | "Energetic" | "Stressed" | "Fatigued" | "Anxious" | "Relaxed" | string;
+  tags?: string[];            // e.g., ["Work", "Sleep", "Family", "Exercise", "Diet", "Meds"]
+  notes?: string;             // User reflections or context
+}
+```
+
 ### Universal Backup & Restore Structure (`BackupSchema`)
 
 ```typescript
 interface AppBackupData {
   app: "Vitals Tracker";
-  version: string;            // e.g., "6.0"
+  version: string;            // e.g., "6.1"
   exportDate: string;         // ISO-8601
   profiles: UserProfile[];
   vitals: VitalRecord[];
   medications: Medication[];
   medicationIntakes: MedicationIntakeEvent[];
+  moods: MoodRecord[];
 }
 ```
 

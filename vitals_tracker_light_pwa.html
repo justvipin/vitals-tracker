@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Vitals Tracker v6.0</title>
+  <title>Vitals Tracker v6.1</title>
 
   <!-- PWA & Mobile Web Tags (Light Theme) -->
   <meta name="theme-color" content="#FFFFFF" />
@@ -267,8 +267,11 @@
               Blood pressure is within optimal range • 1 medication dose pending today
             </h2>
           </div>
-          <div id="dash-adherence-pill" class="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200 shrink-0">
+          <div class="flex items-center gap-1.5 shrink-0">
+            <div id="dash-today-mood-pill" class="hidden px-2 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-extrabold border border-purple-200 flex items-center gap-1"></div>
+            <div id="dash-adherence-pill" class="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200">
             100% Adherence
+          </div>
           </div>
         </div>
 
@@ -471,6 +474,7 @@
           <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="bp">BP</button>
           <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="glucose">Sugar</button>
           <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="meds">Meds</button>
+          <button class="hist-filter px-2.5 py-1 rounded-lg text-slate-600" data-f="mood">Mood</button>
         </div>
       </div>
       <div id="history-feed" class="space-y-2.5 pt-1"></div>
@@ -680,15 +684,230 @@
 
   <!-- Continuous App Version Display in Footer -->
   <footer class="text-center py-2 text-[11px] font-semibold text-slate-400 no-print">
-    Vitals Tracker <span class="text-purple-600 font-extrabold">v6.0</span> • Local-First Offline Health Monitoring
+    Vitals Tracker <span class="text-purple-600 font-extrabold">v6.1</span> • Local-First Offline Health Monitoring
   </footer>
 
-  <!-- ========================================== -->
-  <!-- 5. ADD MEASUREMENT SLIDE-OVER DRAWER -->
+    <!-- ========================================== -->
+  <!-- 5. BACKDROP & SLIDE-OVER DRAWERS -->
   <!-- ========================================== -->
   <div id="drawer-backdrop" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-200 opacity-0 pointer-events-none no-print"></div>
 
-  <div id="log-drawer" class="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden no-print">
+  <!-- 5A. HEALTHLOG "LOG" CAPTURE PICKER DRAWER -->
+  <div id="modal-log-picker" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col no-print">
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 tracking-tight">Log</h3>
+        <p class="text-xs text-slate-500 font-medium">What would you like to record?</p>
+      </div>
+      <button id="btn-close-log-picker" type="button" class="cursor-pointer p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition" title="Close">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Choices: Vitals, Medication, Mood -->
+    <div class="px-6 py-5 space-y-3">
+      <!-- 1. Measurement -->
+      <button id="btn-pick-measurement" type="button" class="cursor-pointer w-full p-4 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 transition flex items-center gap-3.5 text-left group active:scale-98">
+        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-xs">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-base font-black text-slate-900 group-hover:text-purple-700 transition">Measurement</div>
+          <div class="text-xs text-slate-500 font-medium">Weight, blood pressure, pulse and more</div>
+        </div>
+        <div class="text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
+
+      <!-- 2. Medication -->
+      <button id="btn-pick-medication" type="button" class="cursor-pointer w-full p-4 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 transition flex items-center gap-3.5 text-left group active:scale-98">
+        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-xs">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-base font-black text-slate-900 group-hover:text-purple-700 transition">Medication</div>
+          <div class="text-xs text-slate-500 font-medium">Mark a dose as taken</div>
+        </div>
+        <div class="text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
+
+      <!-- 3. Mood -->
+      <button id="btn-pick-mood" type="button" class="cursor-pointer w-full p-4 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 transition flex items-center gap-3.5 text-left group active:scale-98">
+        <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-xs">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="text-base font-black text-slate-900 group-hover:text-purple-700 transition">Mood</div>
+          <div class="text-xs text-slate-500 font-medium">Log your mood and tags</div>
+        </div>
+        <div class="text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 5B. MEDICATION INTAKE LOG DRAWER -->
+  <div id="modal-med-intake-drawer" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden no-print">
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 tracking-tight">Record Medication Dose</h3>
+        <p class="text-xs text-slate-500 font-medium">Mark intake status and time</p>
+      </div>
+      <button id="btn-close-med-intake-drawer" type="button" class="cursor-pointer p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition" title="Close">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="overflow-y-auto px-6 py-5 space-y-4 flex-1">
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Select Medication:</label>
+        <select id="select-intake-med" class="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl py-3 px-4 text-base font-bold text-slate-900 focus:bg-white focus:border-[#B18AFF] focus:ring-2 focus:ring-purple-200 focus:outline-none transition"></select>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Dose Timing / Slot:</label>
+        <select id="select-intake-slot" class="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl py-3 px-4 text-base font-bold text-slate-900 focus:bg-white focus:border-[#B18AFF] focus:ring-2 focus:ring-purple-200 focus:outline-none transition">
+          <option value="morning">Morning (AM)</option>
+          <option value="afternoon">Afternoon</option>
+          <option value="evening">Evening (PM)</option>
+          <option value="bedtime">Bedtime</option>
+          <option value="prn">As Needed (SOS / PRN)</option>
+        </select>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Intake Status:</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" class="intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition" data-status="taken">
+            <span class="text-base font-black">✓</span>
+            <span>Taken</span>
+          </button>
+          <button type="button" class="intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition" data-status="late">
+            <span class="text-base font-black">⏱</span>
+            <span>Late</span>
+          </button>
+          <button type="button" class="intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition" data-status="skipped">
+            <span class="text-base font-black">✕</span>
+            <span>Skipped</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Date & Time:</label>
+        <input type="datetime-local" id="in-intake-dt" class="hl-form-input font-medium" />
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Notes (Optional):</label>
+        <input type="text" id="in-intake-notes" placeholder="e.g., Taken after breakfast" class="hl-form-input" />
+      </div>
+
+      <div class="pt-2 flex items-center gap-2">
+        <button id="btn-save-intake-drawer" type="button" class="cursor-pointer flex-1 py-3.5 px-4 rounded-2xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black text-sm shadow-md active:scale-98 transition">
+          Save Dose
+        </button>
+        <button id="btn-cancel-intake-drawer" type="button" class="cursor-pointer py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5C. MOOD & WELLBEING LOG DRAWER -->
+  <div id="modal-mood-drawer" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden no-print">
+    <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 tracking-tight">Log Mood</h3>
+        <p class="text-xs text-slate-500 font-medium">How are you feeling right now?</p>
+      </div>
+      <button id="btn-close-mood-drawer" type="button" class="cursor-pointer p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition" title="Close">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="overflow-y-auto px-6 py-5 space-y-4 flex-1">
+      <!-- 5 Faces -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Overall Mood:</label>
+        <div class="grid grid-cols-5 gap-1.5 text-center" id="mood-scores-grid">
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="1" data-label="Terrible">
+            <span class="text-2xl">😖</span>
+            <span class="text-[10px] font-bold text-slate-700">Terrible</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="2" data-label="Low">
+            <span class="text-2xl">🙁</span>
+            <span class="text-[10px] font-bold text-slate-700">Low</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="3" data-label="Okay">
+            <span class="text-2xl">😐</span>
+            <span class="text-[10px] font-bold text-slate-700">Okay</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border-2 border-purple-500 bg-purple-100 text-purple-900 flex flex-col items-center gap-1 transition active:scale-95 shadow-xs" data-score="4" data-label="Good">
+            <span class="text-2xl">🙂</span>
+            <span class="text-[10px] font-black text-purple-900">Good</span>
+          </button>
+          <button type="button" class="mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95" data-score="5" data-label="Great">
+            <span class="text-2xl">😄</span>
+            <span class="text-[10px] font-bold text-slate-700">Great</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Energy / State Pills -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Energy & Mind State:</label>
+        <div class="flex flex-wrap gap-1.5" id="mood-energy-container">
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Calm">😌 Calm</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Energetic">⚡ Energetic</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Stressed">😫 Stressed</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Fatigued">🥱 Fatigued</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Anxious">😰 Anxious</button>
+          <button type="button" class="mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition" data-energy="Relaxed">🧘 Relaxed</button>
+        </div>
+      </div>
+
+      <!-- Quick Context Tags -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500">Context Tags:</label>
+        <div class="flex flex-wrap gap-1.5" id="mood-tags-container">
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Work">💼 Work</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Sleep">💤 Sleep</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Family">🏠 Family</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Exercise">🏃 Exercise</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Diet">🥗 Diet</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Meds">💊 Meds</button>
+          <button type="button" class="mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition" data-tag="Weather">🌤️ Weather</button>
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Date & Time:</label>
+        <input type="datetime-local" id="in-mood-dt" class="hl-form-input font-medium" />
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-sm font-bold text-slate-800">Notes & Reflections:</label>
+        <textarea id="in-mood-notes" rows="2" placeholder="Any thoughts, triggers, or notes..." class="hl-form-input resize-none"></textarea>
+      </div>
+
+      <div class="pt-2 flex items-center gap-2">
+        <button id="btn-save-mood-drawer" type="button" class="cursor-pointer flex-1 py-3.5 px-4 rounded-2xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white font-black text-sm shadow-md active:scale-98 transition">
+          Save Mood
+        </button>
+        <button id="btn-cancel-mood-drawer" type="button" class="cursor-pointer py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5D. ADD MEASUREMENT SLIDE-OVER DRAWER -->
+  <div id="log-drawer" class="fixed inset-x-0 bottom-0 z-[60] max-w-md mx-auto bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl drawer-transition drawer-hidden flex flex-col max-h-[92vh] overflow-hidden no-print">>
     
     <!-- Header -->
     <div class="px-6 py-4 flex items-center justify-between border-b border-slate-100">
@@ -889,7 +1108,7 @@
   <!-- ========================================== -->
   <!-- 6. MEDICATION PRESCRIPTION MANAGER MODAL -->
   <!-- ========================================== -->
-  <div id="modal-med-manager" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
+  <div id="modal-med-manager" class="fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
     <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2">
         <div>
@@ -952,7 +1171,7 @@
   <!-- ========================================== -->
   <!-- 7. PROFILE CREATION / EDIT MODAL (CLEANED) -->
   <!-- ========================================== -->
-  <div id="modal-profile-form" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
+  <div id="modal-profile-form" class="fixed inset-0 z-[70] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden no-print">
     <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2">
         <h3 id="profile-form-title" class="text-base font-extrabold text-slate-900">Patient Profile</h3>
@@ -1018,7 +1237,7 @@
   </div>
 
   <!-- Toast Notification Pill -->
-  <div id="toast" class="fixed top-5 inset-x-0 z-50 flex justify-center pointer-events-none opacity-0 transition-opacity duration-200 no-print">
+  <div id="toast" class="fixed top-5 inset-x-0 z-[80] flex justify-center pointer-events-none opacity-0 transition-opacity duration-200 no-print">
     <div id="toast-text" class="bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg">
       Saved
     </div>
@@ -1030,11 +1249,12 @@
   <script>
     // Database Configuration & Non-Destructive v2 Schema Migration
     const DB_NAME = 'VitalsTrackerDB';
-    const DB_VERSION = 2; // Additive migration: adds medications & intakes stores
+    const DB_VERSION = 3; // Additive migration: adds medications & intakes stores
     const STORE_PROFILES = 'profiles';
     const STORE_VITALS = 'vitals';
     const STORE_MEDICATIONS = 'medications';
     const STORE_INTAKES = 'medication_intakes';
+    const STORE_MOODS = 'moods';
 
     let activeProfileId = null;
     let profiles = [];
@@ -1077,12 +1297,18 @@
             const ms = db.createObjectStore(STORE_MEDICATIONS, { keyPath: 'id' });
             ms.createIndex('profileId', 'profileId', { unique: false });
           }
-          // Store 4: Medication Intake Ledger (Additive in v6.0)
+                    // Store 4: Medication Intake Ledger (Additive in v6.0)
           if (!db.objectStoreNames.contains(STORE_INTAKES)) {
             const is = db.createObjectStore(STORE_INTAKES, { keyPath: 'id' });
             is.createIndex('profileId', 'profileId', { unique: false });
             is.createIndex('scheduledDate', 'scheduledDate', { unique: false });
             is.createIndex('medicationId', 'medicationId', { unique: false });
+          }
+          // Store 5: Mood & Wellbeing (Additive in v6.1)
+          if (!db.objectStoreNames.contains(STORE_MOODS)) {
+            const md = db.createObjectStore(STORE_MOODS, { keyPath: 'id', autoIncrement: true });
+            md.createIndex('profileId', 'profileId', { unique: false });
+            md.createIndex('timestamp', 'timestamp', { unique: false });
           }
         };
         req.onsuccess = () => resolve(req.result);
@@ -1245,6 +1471,43 @@
         const req = tx.objectStore(STORE_INTAKES).put(intake);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
+      });
+    }
+
+    
+    // Mood & Wellbeing Storage (v6.1)
+    async function dbGetMoods(pId) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MOODS], 'readonly');
+        const req = tx.objectStore(STORE_MOODS).getAll();
+        req.onsuccess = () => {
+          let list = req.result || [];
+          if (pId != null) list = list.filter(m => Number(m.profileId) === Number(pId));
+          list.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbSaveMood(record) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MOODS], 'readwrite');
+        const req = tx.objectStore(STORE_MOODS).put(record);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteMood(id) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_MOODS], 'readwrite');
+        tx.objectStore(STORE_MOODS).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
       });
     }
 
@@ -1421,27 +1684,291 @@
       }
     });
 
-    function openDrawer() {
-      syncFormDateTimeToNow();
+    const logPickerDrawer = document.getElementById('modal-log-picker');
+    const medIntakeDrawer = document.getElementById('modal-med-intake-drawer');
+    const moodDrawer = document.getElementById('modal-mood-drawer');
+
+    let currentSelectedIntakeStatus = 'taken';
+    let currentSelectedMoodScore = 4;
+    let currentSelectedMoodLabel = 'Good';
+    let currentSelectedMoodEnergy = '';
+    let currentSelectedMoodTags = new Set();
+
+    const MOOD_EMOJIS = {
+      1: '😖',
+      2: '🙁',
+      3: '😐',
+      4: '🙂',
+      5: '😄'
+    };
+
+    function showBackdrop() {
       backdrop.classList.remove('opacity-0', 'pointer-events-none');
       backdrop.classList.add('opacity-100', 'pointer-events-auto');
+    }
+
+    function hideBackdrop() {
+      backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    function openLogPickerDrawer() {
+      drawer.classList.add('drawer-hidden');
+      drawer.classList.remove('drawer-visible');
+      if (medIntakeDrawer) {
+        medIntakeDrawer.classList.add('drawer-hidden');
+        medIntakeDrawer.classList.remove('drawer-visible');
+      }
+      if (moodDrawer) {
+        moodDrawer.classList.add('drawer-hidden');
+        moodDrawer.classList.remove('drawer-visible');
+      }
+      showBackdrop();
+      logPickerDrawer.classList.remove('drawer-hidden');
+      logPickerDrawer.classList.add('drawer-visible');
+    }
+
+    function closeLogPickerDrawer() {
+      logPickerDrawer.classList.remove('drawer-visible');
+      logPickerDrawer.classList.add('drawer-hidden');
+    }
+
+    function openMeasurementDrawer() {
+      closeLogPickerDrawer();
+      syncFormDateTimeToNow();
+      showBackdrop();
       drawer.classList.remove('drawer-hidden');
       drawer.classList.add('drawer-visible');
       updateFormTypeVisibility(selectVitalType.value);
     }
 
-    function closeDrawer() {
+    function closeMeasurementDrawer() {
       drawer.classList.remove('drawer-visible');
       drawer.classList.add('drawer-hidden');
-      backdrop.classList.remove('opacity-100', 'pointer-events-auto');
-      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      hideBackdrop();
     }
 
-    document.getElementById('btn-open-log-drawer').addEventListener('click', openDrawer);
-    document.getElementById('btn-dash-add-shortcut').addEventListener('click', openDrawer);
-    document.getElementById('btn-close-log-drawer').addEventListener('click', closeDrawer);
-    document.getElementById('btn-cancel-modal').addEventListener('click', closeDrawer);
-    backdrop.addEventListener('click', closeDrawer);
+    async function openMedIntakeDrawer() {
+      closeLogPickerDrawer();
+      const meds = await dbGetMedications(activeProfileId);
+      const selMed = document.getElementById('select-intake-med');
+      selMed.innerHTML = '';
+      if (!meds.length) {
+        selMed.innerHTML = '<option value="">No medications configured</option>';
+      } else {
+        meds.forEach(m => {
+          selMed.innerHTML += `<option value="${m.id}">${m.name} (${m.dosage})</option>`;
+        });
+      }
+      
+      const now = new Date();
+      const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById('in-intake-dt').value = localIso;
+      document.getElementById('in-intake-notes').value = '';
+      currentSelectedIntakeStatus = 'taken';
+      updateIntakeDrawerStatusUI();
+
+      showBackdrop();
+      medIntakeDrawer.classList.remove('drawer-hidden');
+      medIntakeDrawer.classList.add('drawer-visible');
+    }
+
+    function closeMedIntakeDrawer() {
+      medIntakeDrawer.classList.remove('drawer-visible');
+      medIntakeDrawer.classList.add('drawer-hidden');
+      hideBackdrop();
+    }
+
+    function updateIntakeDrawerStatusUI() {
+      document.querySelectorAll('.intake-drawer-status-btn').forEach(btn => {
+        const st = btn.getAttribute('data-status');
+        if (st === currentSelectedIntakeStatus) {
+          if (st === 'taken') btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition shadow-xs';
+          else if (st === 'late') btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-amber-500 bg-amber-50 text-amber-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition shadow-xs';
+          else btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border-2 border-slate-500 bg-slate-100 text-slate-800 font-black text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition shadow-xs';
+        } else {
+          btn.className = 'intake-drawer-status-btn cursor-pointer p-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs text-center flex flex-col items-center gap-1 active:scale-95 transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.intake-drawer-status-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentSelectedIntakeStatus = btn.getAttribute('data-status');
+        updateIntakeDrawerStatusUI();
+      });
+    });
+
+    function openMoodDrawer() {
+      closeLogPickerDrawer();
+      const now = new Date();
+      const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById('in-mood-dt').value = localIso;
+      document.getElementById('in-mood-notes').value = '';
+      currentSelectedMoodScore = 4;
+      currentSelectedMoodLabel = 'Good';
+      currentSelectedMoodEnergy = '';
+      currentSelectedMoodTags.clear();
+      updateMoodScoreUI();
+      updateMoodEnergyUI();
+      updateMoodTagsUI();
+
+      showBackdrop();
+      moodDrawer.classList.remove('drawer-hidden');
+      moodDrawer.classList.add('drawer-visible');
+    }
+
+    function closeMoodDrawer() {
+      moodDrawer.classList.remove('drawer-visible');
+      moodDrawer.classList.add('drawer-hidden');
+      hideBackdrop();
+    }
+
+    function updateMoodScoreUI() {
+      document.querySelectorAll('.mood-score-btn').forEach(btn => {
+        const sc = Number(btn.getAttribute('data-score'));
+        if (sc === currentSelectedMoodScore) {
+          btn.className = 'mood-score-btn cursor-pointer p-2 rounded-2xl border-2 border-purple-500 bg-purple-100 text-purple-900 flex flex-col items-center gap-1 transition active:scale-95 shadow-xs';
+          btn.querySelector('span:last-child').className = 'text-[10px] font-black text-purple-900';
+        } else {
+          btn.className = 'mood-score-btn cursor-pointer p-2 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col items-center gap-1 transition active:scale-95';
+          btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-slate-700';
+        }
+      });
+    }
+
+    document.querySelectorAll('.mood-score-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentSelectedMoodScore = Number(btn.getAttribute('data-score'));
+        currentSelectedMoodLabel = btn.getAttribute('data-label');
+        updateMoodScoreUI();
+      });
+    });
+
+    function updateMoodEnergyUI() {
+      document.querySelectorAll('.mood-energy-pill').forEach(btn => {
+        const en = btn.getAttribute('data-energy');
+        if (en === currentSelectedMoodEnergy) {
+          btn.className = 'mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-extrabold bg-purple-600 text-white border border-purple-600 transition shadow-xs';
+        } else {
+          btn.className = 'mood-energy-pill cursor-pointer px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.mood-energy-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const en = btn.getAttribute('data-energy');
+        currentSelectedMoodEnergy = (currentSelectedMoodEnergy === en) ? '' : en;
+        updateMoodEnergyUI();
+      });
+    });
+
+    function updateMoodTagsUI() {
+      document.querySelectorAll('.mood-tag-pill').forEach(btn => {
+        const tg = btn.getAttribute('data-tag');
+        if (currentSelectedMoodTags.has(tg)) {
+          btn.className = 'mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold bg-purple-100 text-purple-800 border border-purple-300 transition shadow-xs';
+        } else {
+          btn.className = 'mood-tag-pill cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.mood-tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tg = btn.getAttribute('data-tag');
+        if (currentSelectedMoodTags.has(tg)) currentSelectedMoodTags.delete(tg);
+        else currentSelectedMoodTags.add(tg);
+        updateMoodTagsUI();
+      });
+    });
+
+    function closeAllDrawers() {
+      closeLogPickerDrawer();
+      drawer.classList.remove('drawer-visible');
+      drawer.classList.add('drawer-hidden');
+      if (medIntakeDrawer) {
+        medIntakeDrawer.classList.remove('drawer-visible');
+        medIntakeDrawer.classList.add('drawer-hidden');
+      }
+      if (moodDrawer) {
+        moodDrawer.classList.remove('drawer-visible');
+        moodDrawer.classList.add('drawer-hidden');
+      }
+      hideBackdrop();
+    }
+
+    // Wiring Add buttons to open HealthLog Log Picker
+    document.getElementById('btn-open-log-drawer').addEventListener('click', openLogPickerDrawer);
+    document.getElementById('btn-dash-add-shortcut').addEventListener('click', openLogPickerDrawer);
+
+    // Close buttons
+    document.getElementById('btn-close-log-picker').addEventListener('click', closeAllDrawers);
+    document.getElementById('btn-close-log-drawer').addEventListener('click', closeMeasurementDrawer);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeMeasurementDrawer);
+    document.getElementById('btn-close-med-intake-drawer').addEventListener('click', closeMedIntakeDrawer);
+    document.getElementById('btn-cancel-intake-drawer').addEventListener('click', closeMedIntakeDrawer);
+    document.getElementById('btn-close-mood-drawer').addEventListener('click', closeMoodDrawer);
+    document.getElementById('btn-cancel-mood-drawer').addEventListener('click', closeMoodDrawer);
+    backdrop.addEventListener('click', closeAllDrawers);
+
+    // Pickers inside Log Drawer
+    document.getElementById('btn-pick-measurement').addEventListener('click', openMeasurementDrawer);
+    document.getElementById('btn-pick-medication').addEventListener('click', openMedIntakeDrawer);
+    document.getElementById('btn-pick-mood').addEventListener('click', openMoodDrawer);
+
+    // Save Medication Intake from Drawer
+    document.getElementById('btn-save-intake-drawer').addEventListener('click', async () => {
+      const medId = document.getElementById('select-intake-med').value;
+      if (!medId) {
+        showToast('Please select a medication');
+        return;
+      }
+      const slot = document.getElementById('select-intake-slot').value;
+      const dtVal = document.getElementById('in-intake-dt').value;
+      const dtObj = dtVal ? new Date(dtVal) : new Date();
+      const schedDate = dtObj.toISOString().slice(0, 10);
+      const notes = document.getElementById('in-intake-notes').value.trim();
+
+      const intakeRecord = {
+        id: 'intake-' + Date.now(),
+        profileId: Number(activeProfileId),
+        medicationId: medId,
+        scheduledDate: schedDate,
+        slot: slot,
+        status: currentSelectedIntakeStatus,
+        timestamp: dtObj.toISOString(),
+        notes: notes
+      };
+
+      await dbPutIntake(intakeRecord);
+      showToast('Medication dose recorded!');
+      closeAllDrawers();
+      await refreshAllViews();
+    });
+
+    // Save Mood from Drawer
+    document.getElementById('btn-save-mood-drawer').addEventListener('click', async () => {
+      const dtVal = document.getElementById('in-mood-dt').value;
+      const dtObj = dtVal ? new Date(dtVal) : new Date();
+      const notes = document.getElementById('in-mood-notes').value.trim();
+
+      const moodRecord = {
+        profileId: Number(activeProfileId),
+        timestamp: dtObj.toISOString(),
+        score: currentSelectedMoodScore,
+        label: currentSelectedMoodLabel,
+        energy: currentSelectedMoodEnergy,
+        tags: Array.from(currentSelectedMoodTags),
+        notes: notes
+      };
+
+      await dbSaveMood(moodRecord);
+      showToast('Mood recorded successfully!');
+      closeAllDrawers();
+      await refreshAllViews();
+    });
 
     // Context-Sensitive Vital Type Forms + medTiming Visibility Rule
     const sectionIds = [
@@ -1960,9 +2487,9 @@
       }
 
       const vitals = await dbGetVitals(activeProfileId);
-      renderDashboardMetrics(vitals);
+      await renderDashboardMetrics(vitals);
       renderTrendsCharts(vitals);
-      renderHistoryFeed(vitals);
+      await renderHistoryFeed(vitals);
       renderDoctorSummary(vitals);
       await renderDashboardMedicationsChecklist();
     }
@@ -1977,7 +2504,7 @@
       return { stage: 'Normal', color: 'emerald', badgeBg: 'bg-emerald-100', badgeText: 'text-emerald-800' };
     }
 
-    function renderDashboardMetrics(vitals) {
+    async function renderDashboardMetrics(vitals) {
       // 1. Lead sentence calculation
       const todayStr = new Date().toISOString().slice(0, 10);
       const todayVitals = vitals.filter(v => v.timestamp.slice(0, 10) === todayStr);
@@ -2207,6 +2734,66 @@
         `;
       }
 
+      
+      // Tile 8: Mood & Wellbeing (v6.1)
+      const userMoods = await dbGetMoods(activeProfileId);
+      const latestMood = userMoods.length ? userMoods[0] : null;
+
+      // Update Today Overview Mood Pill
+      const todayMoodPill = document.getElementById('dash-today-mood-pill');
+      if (latestMood && new Date(latestMood.timestamp).toDateString() === new Date().toDateString()) {
+        todayMoodPill.innerHTML = `<span>${MOOD_EMOJIS[latestMood.score] || '🙂'}</span> <span>${latestMood.label}</span>`;
+        todayMoodPill.classList.remove('hidden');
+      } else {
+        todayMoodPill.classList.add('hidden');
+      }
+
+      if (latestMood) {
+        const mDate = new Date(latestMood.timestamp);
+        const mTimeStr = mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const mTagsStr = [latestMood.energy, ...(latestMood.tags || [])].filter(Boolean).join(' • ');
+
+        cardsHtml += `
+          <div class="hl-card p-3.5 space-y-2 bg-gradient-to-br from-white to-purple-50/40 border border-purple-200/80">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-purple-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Mind & Wellbeing</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+              </span>
+              <span class="text-[11px] font-bold text-slate-400">${mTimeStr}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">${MOOD_EMOJIS[latestMood.score] || '🙂'}</span>
+                <div>
+                  <div class="text-base font-black text-slate-900">${latestMood.label} <span class="text-xs font-bold text-purple-600">(${latestMood.score}/5)</span></div>
+                  <div class="text-xs font-semibold text-slate-500">${mTagsStr || 'Recorded'}</div>
+                </div>
+              </div>
+              <button onclick="openMoodDrawer()" class="cursor-pointer py-1 px-2.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold transition active:scale-95 shadow-xs">
+                + Log
+              </button>
+            </div>
+            ${latestMood.notes ? `<div class="text-[11px] text-slate-500 italic border-t border-purple-100/60 pt-1.5 mt-1">${latestMood.notes}</div>` : ''}
+          </div>
+        `;
+      } else {
+        cardsHtml += `
+          <div class="p-3.5 rounded-2xl bg-purple-50/40 border border-purple-200/60 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">🙂</span>
+              <div>
+                <div class="text-xs font-black text-slate-800">Mind & Wellbeing</div>
+                <div class="text-[11px] font-medium text-slate-500">Log your mood, energy, and daily tags</div>
+              </div>
+            </div>
+            <button onclick="openMoodDrawer()" class="cursor-pointer py-1.5 px-3 rounded-xl bg-[#B18AFF] hover:bg-[#9F75FF] text-white text-xs font-bold transition active:scale-95 shadow-xs">
+              Log Mood
+            </button>
+          </div>
+        `;
+      }
+
       container.innerHTML = cardsHtml || `
         <div class="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
           No vitals recorded yet. Tap <strong>+ Add</strong> below to log your first reading.
@@ -2302,23 +2889,89 @@
       });
     });
 
-    // History Feed
-    function renderHistoryFeed(vitals) {
+    // History Feed (v6.1 Supporting Vitals, Moods, and Meds)
+    async function renderHistoryFeed(vitals) {
       const feed = document.getElementById('history-feed');
-      let filtered = vitals;
-      if (currentHistoryFilter === 'bp') filtered = vitals.filter(v => v.systolic != null);
-      else if (currentHistoryFilter === 'glucose') filtered = vitals.filter(v => v.glucose != null);
+      const allMoods = await dbGetMoods(activeProfileId);
+      const allIntakes = await dbGetIntakes(activeProfileId);
+      const allMeds = await dbGetMedications(activeProfileId);
+      const medMap = Object.fromEntries(allMeds.map(m => [m.id, m]));
 
-      if (!filtered.length) {
+      // Combine into unified entries
+      let entries = [];
+
+      if (currentHistoryFilter === 'all' || currentHistoryFilter === 'bp' || currentHistoryFilter === 'glucose') {
+        let vList = vitals;
+        if (currentHistoryFilter === 'bp') vList = vitals.filter(v => v.systolic != null);
+        else if (currentHistoryFilter === 'glucose') vList = vitals.filter(v => v.glucose != null);
+        vList.forEach(v => entries.push({ type: 'vital', date: new Date(v.timestamp), data: v }));
+      }
+
+      if (currentHistoryFilter === 'all' || currentHistoryFilter === 'meds') {
+        allIntakes.forEach(i => entries.push({ type: 'intake', date: new Date(i.timestamp), data: i }));
+      }
+
+      if (currentHistoryFilter === 'all' || currentHistoryFilter === 'mood') {
+        allMoods.forEach(m => entries.push({ type: 'mood', date: new Date(m.timestamp), data: m }));
+      }
+
+      entries.sort((a, b) => b.date - a.date);
+
+      if (!entries.length) {
         feed.innerHTML = '<div class="text-xs text-slate-400 text-center py-6">No historical entries found.</div>';
         return;
       }
 
-      feed.innerHTML = filtered.map(v => {
-        const d = new Date(v.timestamp);
+      feed.innerHTML = entries.map(item => {
+        const d = item.date;
         const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
         const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+        if (item.type === 'mood') {
+          const m = item.data;
+          const tagsStr = [m.energy, ...(m.tags || [])].filter(Boolean).join(' • ');
+          return `
+            <div class="p-3 rounded-2xl bg-purple-50/40 border border-purple-200 flex items-start justify-between shadow-xs">
+              <div class="space-y-1">
+                <div class="text-[10px] font-extrabold uppercase tracking-wider text-purple-600">${dateStr} • ${timeStr} • MOOD & MIND</div>
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">${MOOD_EMOJIS[m.score] || '🙂'}</span>
+                  <div>
+                    <span class="font-black text-sm text-slate-900">${m.label}</span>
+                    <span class="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full ml-1.5">Score ${m.score}/5</span>
+                  </div>
+                </div>
+                ${tagsStr ? `<div class="text-xs font-semibold text-purple-700">${tagsStr}</div>` : ''}
+                ${m.notes ? `<div class="text-[11px] text-slate-500 italic">${m.notes}</div>` : ''}
+              </div>
+              <button onclick="handleDeleteMood(${m.id})" class="cursor-pointer text-rose-500 hover:text-rose-700 text-xs font-bold p-1" title="Delete">
+                ✕
+              </button>
+            </div>
+          `;
+        }
+
+        if (item.type === 'intake') {
+          const i = item.data;
+          const med = medMap[i.medicationId] || { name: 'Medication', dosage: '' };
+          const badgeClass = i.status === 'taken' ? 'bg-emerald-100 text-emerald-800' : (i.status === 'late' ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700');
+          return `
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between shadow-xs">
+              <div class="space-y-0.5">
+                <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${dateStr} • ${timeStr} • MEDICATION DOSE</div>
+                <div class="font-black text-sm text-slate-900 flex items-center gap-1.5">
+                  <span>💊 ${med.name} ${med.dosage}</span>
+                  <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${badgeClass}">${i.status}</span>
+                </div>
+                <div class="text-xs text-slate-500 font-medium">Slot: ${i.slot}</div>
+                ${i.notes ? `<div class="text-[11px] text-slate-500 italic mt-0.5">${i.notes}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        // Vital Record
+        const v = item.data;
         let detailHtml = '';
         if (v.systolic != null) {
           const cat = classifyBP(v.systolic, v.diastolic);
@@ -2333,6 +2986,12 @@
         if (v.spo2 != null) {
           detailHtml += `<div class="font-bold text-xs text-emerald-800 mt-0.5">SpO2: ${v.spo2}%</div>`;
         }
+        if (v.temp != null) {
+          detailHtml += `<div class="font-bold text-xs text-slate-700 mt-0.5">Temp: ${v.temp}°F</div>`;
+        }
+        if (v.waist != null) {
+          detailHtml += `<div class="font-bold text-xs text-slate-700 mt-0.5">Waist: ${v.waist} cm</div>`;
+        }
         if (v.notes) {
           detailHtml += `<div class="text-[11px] text-slate-500 italic mt-1">${v.notes}</div>`;
         }
@@ -2343,12 +3002,20 @@
               <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${dateStr} • ${timeStr} ${v.medTiming ? '• ' + v.medTiming : ''}</div>
               ${detailHtml}
             </div>
-            <button onclick="handleDeleteVital(${v.id})" class="text-rose-500 hover:text-rose-700 text-xs font-bold p-1">
+            <button onclick="handleDeleteVital(${v.id})" class="cursor-pointer text-rose-500 hover:text-rose-700 text-xs font-bold p-1" title="Delete">
               ✕
             </button>
           </div>
         `;
       }).join('');
+    }
+
+    async function handleDeleteMood(id) {
+      if (confirm('Delete this mood entry?')) {
+        await dbDeleteMood(id);
+        showToast('Mood entry deleted');
+        await refreshAllViews();
+      }
     }
 
     async function handleDeleteVital(id) {
@@ -2550,25 +3217,29 @@
       const allProfiles = await dbGetProfiles();
       const allMeds = [];
       const allIntakes = [];
+      const allMoods = [];
       for (const p of allProfiles) {
         const m = await dbGetMedications(p.id);
         allMeds.push(...m);
         const i = await dbGetIntakes(p.id);
         allIntakes.push(...i);
+        const md = await dbGetMoods(p.id);
+        allMoods.push(...md);
       }
       const backup = {
         app: "Vitals Tracker",
-        version: "6.0",
+        version: "6.1",
         exportDate: new Date().toISOString(),
         profiles: allProfiles,
         vitals: allVitals,
         medications: allMeds,
-        medicationIntakes: allIntakes
+        medicationIntakes: allIntakes,
+        moods: allMoods
       };
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `vitals_tracker_backup_v6.0_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `vitals_tracker_backup_v6.1_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       showToast('JSON Backup (v6.0) downloaded');
     });
@@ -2589,7 +3260,15 @@
             if (data.medicationIntakes) data.medicationIntakes.forEach(i => tx.objectStore(STORE_INTAKES).put(i));
             
             tx.oncomplete = async () => {
-              showToast('Backup restored successfully!');
+              if (backup.moods && Array.isArray(backup.moods)) {
+              const tx = db.transaction([STORE_MOODS], 'readwrite');
+              const os = tx.objectStore(STORE_MOODS);
+              backup.moods.forEach(m => {
+                delete m.id;
+                os.add(m);
+              });
+            }
+            showToast('Backup restored successfully!');
               profiles = await dbGetProfiles();
               if (profiles.length) {
                 activeProfileId = profiles[0].id;
