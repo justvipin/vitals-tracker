@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>VitalsTrack Mobile</title>
+  
+  <meta name="theme-color" content="#0284c7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="VitalsTrack" />
+  <meta name="description" content="100% offline, local-first mobile vitals and blood pressure tracker for families." />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              900: '#0c4a6e',
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      box-sizing: border-box;
+    }
+    body {
+      overscroll-behavior-y: none;
+      -webkit-font-smoothing: antialiased;
+      font-size: 15px;
+    }
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    .sheet-transition {
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+    }
+    .sheet-hidden {
+      transform: translateY(100%);
+      pointer-events: none;
+    }
+    .sheet-visible {
+      transform: translateY(0%);
+    }
+    .backdrop-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .backdrop-visible {
+      opacity: 1;
+    }
+    .pb-safe-nav {
+      padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 5.5rem);
+    }
+    .pt-safe-top {
+      padding-top: max(env(safe-area-inset-top, 0px), 12px);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @media print {
+      body * { visibility: hidden !important; }
+      #printable-summary, #printable-summary * { visibility: visible !important; }
+      #printable-summary {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col font-sans select-none antialiased">
+
+  <!-- ======================================================== -->
+  <!-- SCREEN 1: WELCOME & PROFILE SELECTOR (Full Mobile Screen) -->
+  <!-- ======================================================== -->
+  <section id="screen-welcome" class="fixed inset-0 z-50 bg-slate-900 text-white flex flex-col justify-between p-5 pt-safe-top overflow-y-auto">
+    <div class="space-y-3 pt-6 max-w-sm mx-auto w-full">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/30 text-sky-300 text-xs font-semibold">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        100% Offline & Private
+      </div>
+      <h1 class="text-3xl font-black tracking-tight text-white">Who is recording<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-teal-300">vitals today?</span></h1>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Select a family member to review clinical trends, calculate 7-day medication averages, or log new measurements.
+      </p>
+    </div>
+
+    <!-- Profile Cards Grid -->
+    <div class="my-auto py-6 max-w-sm mx-auto w-full space-y-3" id="welcome-profiles-grid">
+      <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="max-w-sm mx-auto w-full pb-6 space-y-3 text-center">
+      <button id="btn-add-profile-welcome" class="w-full py-3.5 px-4 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-[0.98] transition border border-white/15 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg">
+        <svg class="w-5 h-5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7.5" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Add Family Member
+      </button>
+      <p class="text-[11px] text-slate-500">Stored strictly on this device (IndexedDB)</p>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- SCREEN 2: MAIN APP WORKSPACE                             -->
+  <!-- ======================================================== -->
+  <div id="main-app-container" class="flex-1 flex flex-col w-full max-w-md mx-auto relative bg-slate-50 min-h-screen shadow-2xl overflow-x-hidden">
+
+    <!-- Top Sticky Mobile Header -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between">
+      <button id="btn-switch-profile" class="flex items-center gap-2.5 py-1 px-2 -ml-1 rounded-xl active:bg-slate-100 transition group text-left">
+        <div id="header-avatar" class="w-8 h-8 rounded-full bg-sky-600 text-white font-black text-xs flex items-center justify-center shadow-xs uppercase">
+          ME
+        </div>
+        <div class="leading-tight">
+          <div class="flex items-center gap-1">
+            <span id="header-profile-name" class="text-sm font-extrabold text-slate-800 tracking-tight">Self</span>
+            <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <span id="header-profile-subtitle" class="text-[10px] text-slate-500 font-medium">HTN (Telmikind 40)</span>
+        </div>
+      </button>
+
+      <div class="flex items-center gap-1.5">
+        <button id="btn-quick-doctor" class="px-2.5 py-1.5 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs font-bold flex items-center gap-1 transition active:scale-95">
+          <svg class="w-3.5 h-3.5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Doctor
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Tab Views -->
+    <main class="flex-1 p-4 pb-safe-nav space-y-4">
+
+      <!-- TAB 1: HOME DASHBOARD -->
+      <section id="tab-home" class="space-y-3.5">
+        <!-- Status Hero Card -->
+        <div class="bg-gradient-to-br from-slate-900 to-sky-950 text-white p-4 rounded-3xl shadow-lg relative overflow-hidden">
+          <div class="flex items-center justify-between text-xs text-sky-300 font-semibold mb-1">
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              CURRENT STATUS
+            </span>
+            <span id="dash-latest-time" class="text-slate-400 text-[11px]">No readings yet</span>
+          </div>
+
+          <!-- Latest BP Typography -->
+          <div class="py-1">
+            <div class="flex items-baseline gap-1.5">
+              <span id="dash-bp-main" class="text-4xl font-black tracking-tight">--/--</span>
+              <span class="text-xs text-slate-400 font-semibold">mmHg</span>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <span id="dash-bp-pill" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">Awaiting Log</span>
+              <span id="dash-pulse-pill" class="text-xs text-slate-300 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-rose-400 inline" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                -- bpm
+              </span>
+            </div>
+          </div>
+          <div class="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-sky-500/10 pointer-events-none"></div>
+        </div>
+
+        <!-- 7-Day Quick BP Averages (AM vs PM) -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold tracking-wider text-amber-700 uppercase flex items-center gap-1">
+                <svg class="w-3 h-3 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                7D AM Average
+              </span>
+            </div>
+            <div id="dash-am-val" class="text-xl font-black text-slate-800 mt-1">--/--</div>
+            <div id="dash-am-count" class="text-[10px] text-slate-400 mt-0.5">0 logs before meds</div>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold tracking-wider text-indigo-700 uppercase flex items-center gap-1">
+                <svg class="w-3 h-3 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                7D PM Average
+              </span>
+            </div>
+            <div id="dash-pm-val" class="text-xl font-black text-slate-800 mt-1">--/--</div>
+            <div id="dash-pm-count" class="text-[10px] text-slate-400 mt-0.5">0 evening logs</div>
+          </div>
+        </div>
+
+        <!-- Glanceable Vitals Grid -->
+        <h2 class="text-xs font-black uppercase tracking-wider text-slate-500 pt-1">Other Captured Vitals</h2>
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Weight & Waist -->
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+              <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+              Weight & Waist
+            </div>
+            <div id="dash-weight-val" class="text-lg font-black text-slate-800 mt-1">-- kg</div>
+            <div id="dash-waist-val" class="text-[11px] text-slate-500 font-medium">Waist: -- cm</div>
+          </div>
+
+          <!-- Glucose -->
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+              <svg class="w-3 h-3 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+              Blood Glucose
+            </div>
+            <div id="dash-glucose-val" class="text-lg font-black text-slate-800 mt-1">-- mg/dL</div>
+            <div id="dash-glucose-ctx" class="text-[11px] text-slate-500 font-medium">No checks</div>
+          </div>
+
+          <!-- SpO2 & Temp -->
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs col-span-2 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-sm">
+                %
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase block">SpO2 Oxygen</span>
+                <span id="dash-spo2-val" class="text-base font-black text-slate-800">-- %</span>
+              </div>
+            </div>
+            <div class="h-8 w-px bg-slate-200"></div>
+            <div class="flex items-center gap-3 pr-2">
+              <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase block">Temperature</span>
+                <span id="dash-temp-val" class="text-base font-black text-slate-800">-- °F</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: RESTORED COMPREHENSIVE TRENDS TAB (ALL 7 VITALS) -->
+      <section id="tab-trends" class="hidden space-y-3.5">
+        <div class="flex items-center justify-between px-1">
+          <div>
+            <h2 class="text-xs font-black uppercase tracking-wider text-slate-600">Vital Trends & Sparklines</h2>
+            <p class="text-[11px] text-slate-400">Complete trajectory for all 7 tracked vitals</p>
+          </div>
+          <span class="text-[10px] font-extrabold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200 uppercase tracking-wider">
+            All 7 Vitals
+          </span>
+        </div>
+        
+        <!-- Dynamically populated with all 7 vital trend cards -->
+        <div id="trends-feed" class="space-y-3.5"></div>
+      </section>
+
+      <!-- TAB 3: HISTORY FEED -->
+      <section id="tab-history" class="hidden space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black uppercase tracking-wider text-slate-600">Past Records</span>
+          <div class="flex items-center bg-slate-200/70 p-0.5 rounded-xl text-[11px] font-bold">
+            <button class="hist-pill-btn px-2.5 py-1 rounded-lg bg-white shadow-2xs text-sky-700" data-filter="all">All</button>
+            <button class="hist-pill-btn px-2.5 py-1 rounded-lg text-slate-600" data-filter="bp">BP Only</button>
+            <button class="hist-pill-btn px-2.5 py-1 rounded-lg text-slate-600" data-filter="glucose">Sugar</button>
+          </div>
+        </div>
+        <div id="history-feed" class="space-y-2.5">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- TAB 4: DOCTOR CONSULTATION & BACKUP -->
+      <section id="tab-doctor" class="hidden space-y-3.5">
+        <!-- Printable / On-Screen Consultation Summary Card -->
+        <div id="printable-summary" class="bg-white p-4 rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+          <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+            <div>
+              <span class="text-[10px] font-bold text-sky-600 uppercase tracking-wider">Clinical Consultation Summary</span>
+              <h2 id="doc-summary-person" class="text-base font-black text-slate-900">Self (Age 40)</h2>
+              <p id="doc-summary-condition" class="text-xs text-slate-500">Hypertension • Telmikind 40</p>
+            </div>
+            <button onclick="window.print()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-95 transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+            </button>
+          </div>
+
+          <!-- TILE 1: 7-DAY BLOOD PRESSURE AVERAGE TILE -->
+          <div class="p-3 bg-gradient-to-br from-amber-50/80 to-amber-100/40 border border-amber-200/80 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                7-Day Blood Pressure Window
+              </span>
+              <span id="doc-7d-overall" class="text-xs font-black text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-md">Overall: --/--</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+              <div class="p-2 bg-white/90 rounded-xl border border-amber-200 shadow-2xs">
+                <span class="text-[10px] font-extrabold text-amber-800 uppercase block">7D AM Avg (Trough)</span>
+                <span id="doc-7d-am-avg" class="text-base font-black text-slate-800">--/--</span>
+                <span id="doc-7d-am-sub" class="text-[10px] text-slate-400 block">0 AM checks</span>
+              </div>
+              <div class="p-2 bg-white/90 rounded-xl border border-amber-200 shadow-2xs">
+                <span class="text-[10px] font-extrabold text-indigo-800 uppercase block">7D PM Avg</span>
+                <span id="doc-7d-pm-avg" class="text-base font-black text-slate-800">--/--</span>
+                <span id="doc-7d-pm-sub" class="text-[10px] text-slate-400 block">0 PM checks</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TILE 2: 30-DAY EXTENDED BLOOD PRESSURE CONTROL TILE -->
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black text-slate-800 uppercase tracking-wider">
+                30-Day Extended BP Control
+              </span>
+              <span id="doc-30d-overall" class="text-xs font-black text-slate-700 bg-slate-200 px-2 py-0.5 rounded-md">Overall: --/--</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+              <div class="p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <span class="text-[10px] font-bold text-slate-600 uppercase block">30D AM Avg</span>
+                <span id="doc-am-avg" class="text-base font-black text-slate-800">--/--</span>
+                <span id="doc-am-sub" class="text-[10px] text-slate-400 block">0 AM checks</span>
+              </div>
+              <div class="p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                <span class="text-[10px] font-bold text-slate-600 uppercase block">30D PM Avg</span>
+                <span id="doc-pm-avg" class="text-base font-black text-slate-800">--/--</span>
+                <span id="doc-pm-sub" class="text-[10px] text-slate-400 block">0 PM checks</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TILE 3: DEDICATED GLUCOSE TILE (7-DAY & 30-DAY FASTING + POST-MEAL) -->
+          <div class="p-3 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 border border-teal-200/80 rounded-2xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black text-teal-950 uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                Blood Glucose Summary Tile
+              </span>
+              <span class="text-[10px] font-bold text-teal-700">mg/dL</span>
+            </div>
+            
+            <!-- 7-Day Glucose Sub-Grid -->
+            <div class="space-y-1">
+              <span class="text-[10px] font-black text-teal-800 uppercase tracking-wider block">7-Day Window</span>
+              <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                <div class="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs">
+                  <span class="text-[10px] font-extrabold text-teal-800 uppercase block">7D Fasting</span>
+                  <span id="doc-g-7d-fast" class="text-base font-black text-slate-800">--</span>
+                  <span id="doc-g-7d-fast-sub" class="text-[10px] text-slate-400 block">0 tests</span>
+                </div>
+                <div class="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs">
+                  <span class="text-[10px] font-extrabold text-teal-800 uppercase block">7D Post-Meal</span>
+                  <span id="doc-g-7d-pp" class="text-base font-black text-slate-800">--</span>
+                  <span id="doc-g-7d-pp-sub" class="text-[10px] text-slate-400 block">0 tests</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 30-Day Glucose Sub-Grid -->
+            <div class="space-y-1 pt-1">
+              <span class="text-[10px] font-black text-teal-800 uppercase tracking-wider block">30-Day Window</span>
+              <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                <div class="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs">
+                  <span class="text-[10px] font-bold text-slate-600 uppercase block">30D Fasting</span>
+                  <span id="doc-g-30d-fast" class="text-base font-black text-slate-800">--</span>
+                  <span id="doc-g-30d-fast-sub" class="text-[10px] text-slate-400 block">0 tests</span>
+                </div>
+                <div class="p-2 bg-white rounded-xl border border-teal-200 shadow-2xs">
+                  <span class="text-[10px] font-bold text-slate-600 uppercase block">30D Post-Meal</span>
+                  <span id="doc-g-30d-pp" class="text-base font-black text-slate-800">--</span>
+                  <span id="doc-g-30d-pp-sub" class="text-[10px] text-slate-400 block">0 tests</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Outliers Count Pill -->
+          <div class="flex items-center justify-between text-xs p-2.5 bg-slate-50 rounded-xl">
+            <span class="text-slate-600 font-medium">Outlier BP Spikes (&ge; 135/85):</span>
+            <strong id="doc-outlier-badge" class="text-rose-600 font-black">0</strong>
+          </div>
+
+          <!-- Compact 1-Line Recent History -->
+          <div class="space-y-1.5 pt-1">
+            <span class="text-[11px] font-bold text-slate-700 block">Recent Logs (1-Line View)</span>
+            <div id="doc-recent-feed" class="space-y-1">
+              <!-- Dynamically populated 1-line rows -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Export & Local Backup Actions -->
+        <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-2xs space-y-2.5">
+          <h3 class="text-xs font-black uppercase tracking-wider text-slate-700">Data Portability & Offline Backup</h3>
+          
+          <button id="btn-export-csv" class="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition shadow-xs">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Records as CSV (Excel)
+          </button>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-backup-json" class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition">
+              <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              JSON Backup
+            </button>
+
+            <label class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer text-center">
+              <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Restore File
+              <input type="file" id="input-restore-json" accept=".json" class="hidden" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Floating Action Button (+ Log Vitals) -->
+    <div class="fixed bottom-20 right-4 z-40 max-w-md w-full pointer-events-none flex justify-end pr-4">
+      <button id="btn-fab-open-log" class="pointer-events-auto bg-gradient-to-tr from-sky-600 to-teal-500 hover:from-sky-700 hover:to-teal-600 active:scale-95 text-white font-extrabold px-4 py-3 rounded-full shadow-xl shadow-sky-600/30 flex items-center gap-2 text-xs transition duration-200 border-2 border-white/40">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>+ Log Vitals</span>
+      </button>
+    </div>
+
+    <!-- Fixed Bottom Mobile Navigation Bar -->
+    <nav class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200/80 max-w-md mx-auto py-1.5 px-3">
+      <div class="grid grid-cols-4 gap-1">
+        <button class="nav-tab-btn flex flex-col items-center gap-1 py-1 text-sky-600 font-extrabold" data-tab="tab-home">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span class="text-[10px] tracking-tight">Summary</span>
+        </button>
+
+        <button class="nav-tab-btn flex flex-col items-center gap-1 py-1 text-slate-400 font-medium" data-tab="tab-trends">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+          <span class="text-[10px] tracking-tight">Trends</span>
+        </button>
+
+        <button class="nav-tab-btn flex flex-col items-center gap-1 py-1 text-slate-400 font-medium" data-tab="tab-history">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+          <span class="text-[10px] tracking-tight">History</span>
+        </button>
+
+        <button class="nav-tab-btn flex flex-col items-center gap-1 py-1 text-slate-400 font-medium" data-tab="tab-doctor">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          <span class="text-[10px] tracking-tight">Doctor</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL / BOTTOM SHEET: LOG VITALS ENTRY                   -->
+  <!-- ======================================================== -->
+  <div id="sheet-backdrop" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-200 backdrop-hidden"></div>
+
+  <div id="log-bottom-sheet" class="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto bg-white rounded-t-3xl shadow-2xl sheet-transition sheet-hidden flex flex-col max-h-[92vh] overflow-hidden">
+    <!-- Sheet Drag Handle & Header -->
+    <div class="p-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-1 mb-2"></div>
+        <div class="flex items-center gap-2">
+          <h3 class="text-sm font-black text-slate-900">Record Measurement</h3>
+          <span id="sheet-person-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200">Self</span>
+        </div>
+      </div>
+      <button id="btn-close-sheet" class="p-1 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Sheet Form Body -->
+    <div class="overflow-y-auto p-4 space-y-4 flex-1">
+      
+      <!-- Date, Time & Medication Context -->
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">Date & Time</label>
+          <input type="datetime-local" id="input-timestamp" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">Medication Timing</label>
+          <select id="input-med-timing" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            <option value="Before Telmikind / Meds">Before Telmikind / Meds</option>
+            <option value="Post Meds">Post Meds</option>
+            <option value="Bedtime">Bedtime</option>
+            <option value="Fasting (AM)">Fasting (AM)</option>
+            <option value="Random">Random</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Modular Selector Pills -->
+      <div class="space-y-1.5">
+        <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Select What You Measured</label>
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5" id="vitals-pills-container">
+          <button type="button" class="vital-pill px-3 py-1.5 rounded-full text-xs font-bold border transition shrink-0 bg-sky-600 text-white border-sky-600 shadow-2xs" data-target="block-bp">
+            ✓ BP & Pulse
+          </button>
+          <button type="button" class="vital-pill px-3 py-1.5 rounded-full text-xs font-bold border transition shrink-0 bg-slate-100 text-slate-700 border-slate-200" data-target="block-glucose">
+            + Glucose
+          </button>
+          <button type="button" class="vital-pill px-3 py-1.5 rounded-full text-xs font-bold border transition shrink-0 bg-slate-100 text-slate-700 border-slate-200" data-target="block-weight">
+            + Weight
+          </button>
+          <button type="button" class="vital-pill px-3 py-1.5 rounded-full text-xs font-bold border transition shrink-0 bg-slate-100 text-slate-700 border-slate-200" data-target="block-spo2">
+            + SpO2
+          </button>
+          <button type="button" class="vital-pill px-3 py-1.5 rounded-full text-xs font-bold border transition shrink-0 bg-slate-100 text-slate-700 border-slate-200" data-target="block-temp">
+            + Temp
+          </button>
+          <button type="button" class="vital-pill px-3 py-1.5 rounded-full text-xs font-bold border transition shrink-0 bg-slate-100 text-slate-700 border-slate-200" data-target="block-waist">
+            + Waist
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. BLOOD PRESSURE & PULSE BLOCK -->
+      <div id="block-bp" class="vital-card-block p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-rose-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            Blood Pressure & Heart Rate
+          </span>
+          <div class="flex items-center bg-white p-0.5 rounded-lg border border-slate-200 text-[10px]">
+            <button type="button" id="btn-bp-dual" class="px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold">2 Readings (Avg)</button>
+            <button type="button" id="btn-bp-single" class="px-2 py-0.5 rounded-md text-slate-600 font-medium">Single</button>
+          </div>
+        </div>
+
+        <!-- Dual Readings Mode -->
+        <div id="box-bp-dual" class="space-y-2">
+          <div class="grid grid-cols-2 gap-2 text-center">
+            <div class="bg-white p-2 rounded-xl border border-slate-200">
+              <span class="text-[10px] text-slate-400 font-semibold block mb-1">Reading 1 (Sys / Dia)</span>
+              <div class="flex gap-1">
+                <input type="number" inputmode="numeric" id="sys-1" placeholder="120" class="w-full text-center font-black text-sm bg-slate-50 rounded-lg p-1.5 border border-slate-200" />
+                <input type="number" inputmode="numeric" id="dia-1" placeholder="80" class="w-full text-center font-black text-sm bg-slate-50 rounded-lg p-1.5 border border-slate-200" />
+              </div>
+            </div>
+            <div class="bg-white p-2 rounded-xl border border-slate-200">
+              <span class="text-[10px] text-slate-400 font-semibold block mb-1">Reading 2 (Sys / Dia)</span>
+              <div class="flex gap-1">
+                <input type="number" inputmode="numeric" id="sys-2" placeholder="120" class="w-full text-center font-black text-sm bg-slate-50 rounded-lg p-1.5 border border-slate-200" />
+                <input type="number" inputmode="numeric" id="dia-2" placeholder="80" class="w-full text-center font-black text-sm bg-slate-50 rounded-lg p-1.5 border border-slate-200" />
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs px-1">
+            <span class="text-slate-500 font-medium">Computed Average:</span>
+            <span id="bp-avg-display" class="font-black text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">-- / -- mmHg</span>
+          </div>
+        </div>
+
+        <!-- Single Reading Mode -->
+        <div id="box-bp-single" class="hidden grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-slate-500 font-semibold mb-1">Systolic (Top)</label>
+            <input type="number" inputmode="numeric" id="sys-single" placeholder="124" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-center text-base font-black" />
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-500 font-semibold mb-1">Diastolic (Bottom)</label>
+            <input type="number" inputmode="numeric" id="dia-single" placeholder="78" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-center text-base font-black" />
+          </div>
+        </div>
+
+        <!-- Pulse & Arm Selection -->
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
+          <div>
+            <label class="block text-[10px] text-slate-500 font-semibold mb-1">Pulse / Heart Rate (bpm)</label>
+            <input type="number" inputmode="numeric" id="input-pulse" placeholder="72" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-center text-sm font-black" />
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-500 font-semibold mb-1">Posture / Arm</label>
+            <select id="input-bp-posture" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs font-semibold">
+              <option value="Left Arm (Sitting)">Left Arm (Sitting)</option>
+              <option value="Right Arm (Sitting)">Right Arm (Sitting)</option>
+              <option value="Supine / Lying">Supine (Lying)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. GLUCOSE BLOCK -->
+      <div id="block-glucose" class="vital-card-block hidden p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-slate-800">Blood Glucose (Sugar)</span>
+          <span class="text-[11px] font-bold text-sky-600">mg/dL</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="number" inputmode="numeric" id="input-glucose" placeholder="e.g. 95" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-center text-base font-black" />
+          <select id="input-glucose-type" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-xs font-semibold">
+            <option value="Fasting">Fasting (AM)</option>
+            <option value="Post-Prandial">Post-Meal (2h)</option>
+            <option value="Random">Random</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 3. WEIGHT BLOCK -->
+      <div id="block-weight" class="vital-card-block hidden p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-slate-800">Body Weight</span>
+          <span class="text-[11px] font-bold text-sky-600">Kilograms (kg)</span>
+        </div>
+        <input type="number" step="0.1" inputmode="decimal" id="input-weight" placeholder="e.g. 74.5" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-center text-base font-black" />
+      </div>
+
+      <!-- 4. SPO2 BLOCK -->
+      <div id="block-spo2" class="vital-card-block hidden p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-slate-800">SpO2 Blood Oxygen</span>
+          <span class="text-[11px] font-bold text-teal-600">Percentage (%)</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-slate-500 font-semibold mb-1">SpO2 (%)</label>
+            <input type="number" inputmode="numeric" id="input-spo2" placeholder="98" min="70" max="100" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-center text-base font-black" />
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-500 font-semibold mb-1">Oximeter Pulse (bpm)</label>
+            <input type="number" inputmode="numeric" id="input-spo2-pulse" placeholder="70" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-center text-base font-black" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. TEMPERATURE BLOCK -->
+      <div id="block-temp" class="vital-card-block hidden p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-slate-800">Body Temperature</span>
+          <div class="flex items-center gap-1 text-xs font-bold">
+            <span id="unit-temp-f" class="text-sky-600 cursor-pointer underline font-black">°F</span>
+            <span class="text-slate-300">|</span>
+            <span id="unit-temp-c" class="text-slate-400 cursor-pointer">°C</span>
+          </div>
+        </div>
+        <input type="number" step="0.1" inputmode="decimal" id="input-temp" placeholder="98.6" class="w-full bg-white border border-slate-200 rounded-xl p-2 text-center text-base font-black" />
+      </div>
+
+      <!-- 6. WAIST CIRCUMFERENCE BLOCK -->
+      <div id="block-waist" class="vital-card-block hidden p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold text-slate-800">Waist Circumference</span>
+          <span class="text-[11px] font-bold text-sky-600">cm</span>
+        </div>
+        <input type="number" step="0.5" inputmode="decimal" id="input-waist" placeholder="88" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-center text-base font-black" />
+      </div>
+
+      <!-- Quick Context Chips & Notes -->
+      <div class="space-y-1.5 pt-1">
+        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Quick Context Tags</label>
+        <div class="flex flex-wrap gap-1.5" id="context-chips">
+          <button type="button" class="chip-tag px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">+ Rested 5m</button>
+          <button type="button" class="chip-tag px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">+ Salty Meal</button>
+          <button type="button" class="chip-tag px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">+ Poor Sleep</button>
+          <button type="button" class="chip-tag px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">+ Exercised</button>
+        </div>
+        <input type="text" id="input-notes" placeholder="Optional notes (e.g. slight tension, late tea)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none mt-1" />
+      </div>
+
+    </div>
+
+    <!-- Sheet Bottom Sticky Save Button -->
+    <div class="p-4 border-t border-slate-100 bg-white">
+      <button type="button" id="btn-save-vitals" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-700 hover:to-teal-700 active:scale-98 text-white font-black text-sm shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 transition cursor-pointer">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Vitals Locally
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ADD / EDIT PROFILE                                -->
+  <!-- ======================================================== -->
+  <div id="modal-profile" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-sm font-black text-slate-800">Add Member Profile</h3>
+        <button id="btn-close-prof-modal" class="p-1 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="form-new-profile" class="space-y-2.5 text-xs">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Name / Nickname</label>
+          <input type="text" id="prof-name" required placeholder="e.g. Papa, Sunita, Rahul" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Relationship</label>
+            <select id="prof-relation" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-semibold">
+              <option value="Self">Self</option>
+              <option value="Spouse">Spouse</option>
+              <option value="Parent">Parent</option>
+              <option value="Child">Child</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Age</label>
+            <input type="number" id="prof-age" placeholder="e.g. 54" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Primary Medical Note</label>
+          <input type="text" id="prof-condition" placeholder="e.g. Hypertension (Telmikind 40)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-medium" />
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-black rounded-xl text-xs shadow-md shadow-sky-600/20 active:scale-98 transition mt-2">
+          Create Member Profile
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Pill -->
+  <div id="toast" class="fixed top-4 inset-x-0 z-50 flex justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+    <div id="toast-text" class="bg-slate-900/90 text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg backdrop-blur-xs">
+      Saved
+    </div>
+  </div>
+
+  <script>
+    const DB_NAME = 'MobileVitalsProDB';
+    const DB_VERSION = 1;
+    const STORE_PROFILES = 'profiles';
+    const STORE_VITALS = 'vitals';
+
+    let activeProfileId = 1;
+    let profiles = [];
+    let isDualBP = true;
+    let tempUnit = 'F';
+    let currentHistoryFilter = 'all';
+    let currentTrendRange = '7'; // '7', '30', '90', 'all'
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_PROFILES)) {
+            const ps = db.createObjectStore(STORE_PROFILES, { keyPath: 'id', autoIncrement: true });
+            ps.add({
+              name: 'Self',
+              relation: 'Self',
+              age: 40,
+              condition: 'Hypertension (Telmikind 40)',
+              color: '#0284c7',
+              created_at: new Date().toISOString()
+            });
+          }
+          if (!db.objectStoreNames.contains(STORE_VITALS)) {
+            const vs = db.createObjectStore(STORE_VITALS, { keyPath: 'id', autoIncrement: true });
+            vs.createIndex('profileId', 'profileId', { unique: false });
+            vs.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetProfiles() {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readonly');
+        const req = tx.objectStore(STORE_PROFILES).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbAddProfile(p) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_PROFILES], 'readwrite');
+        const req = tx.objectStore(STORE_PROFILES).add(p);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbAddVital(item) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readwrite');
+        const req = tx.objectStore(STORE_VITALS).add(item);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetVitals(pId = null) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readonly');
+        const req = tx.objectStore(STORE_VITALS).getAll();
+        req.onsuccess = () => {
+          let list = req.result || [];
+          if (pId !== null && pId !== undefined) {
+            list = list.filter(v => Number(v.profileId) === Number(pId));
+          }
+          list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          resolve(list);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteVital(id) {
+      const db = await initDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([STORE_VITALS], 'readwrite');
+        tx.objectStore(STORE_VITALS).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      const txt = document.getElementById('toast-text');
+      txt.textContent = msg;
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 2200);
+    }
+  </script>
+
+  <script>
+    async function loadWelcomeProfiles() {
+      profiles = await dbGetProfiles();
+      if (!profiles.length) {
+        profiles = [{ id: 1, name: 'Self', relation: 'Self', age: 40, condition: 'Hypertension (Telmikind 40)', color: '#0284c7' }];
+      }
+
+      const grid = document.getElementById('welcome-profiles-grid');
+      grid.innerHTML = profiles.map(p => `
+        <div onclick="selectProfileFromWelcome(${p.id})" class="p-4 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-[0.98] border border-white/10 transition flex items-center justify-between cursor-pointer shadow-md">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 text-white font-black text-sm flex items-center justify-center uppercase shadow-sm">
+              ${p.name.slice(0, 2)}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-extrabold text-white">${p.name}</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-sky-200">${p.relation}</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5">${p.age ? 'Age: ' + p.age + ' • ' : ''}${p.condition || 'General Vitals'}</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      `).join('');
+    }
+
+    function selectProfileFromWelcome(id) {
+      activeProfileId = Number(id);
+      localStorage.setItem('vitals_active_profile', activeProfileId);
+      document.getElementById('screen-welcome').classList.add('hidden');
+      applyActiveProfile();
+    }
+
+    document.getElementById('btn-switch-profile').addEventListener('click', () => {
+      loadWelcomeProfiles();
+      document.getElementById('screen-welcome').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-add-profile-welcome').addEventListener('click', () => {
+      document.getElementById('modal-profile').classList.remove('hidden');
+    });
+    document.getElementById('btn-close-prof-modal').addEventListener('click', () => {
+      document.getElementById('modal-profile').classList.add('hidden');
+    });
+
+    document.getElementById('form-new-profile').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('prof-name').value.trim();
+      const relation = document.getElementById('prof-relation').value;
+      const age = parseInt(document.getElementById('prof-age').value, 10) || null;
+      const condition = document.getElementById('prof-condition').value.trim();
+
+      const newId = await dbAddProfile({
+        name,
+        relation,
+        age,
+        condition,
+        created_at: new Date().toISOString()
+      });
+
+      document.getElementById('form-new-profile').reset();
+      document.getElementById('modal-profile').classList.add('hidden');
+      showToast(`Added profile: ${name}`);
+      await loadWelcomeProfiles();
+      selectProfileFromWelcome(newId);
+    });
+
+    function applyActiveProfile() {
+      const active = profiles.find(p => p.id === activeProfileId) || profiles[0];
+      if (!active) return;
+
+      document.getElementById('header-profile-name').textContent = active.name;
+      document.getElementById('header-avatar').textContent = active.name.slice(0, 2);
+      document.getElementById('header-profile-subtitle').textContent = active.condition || active.relation;
+      document.getElementById('sheet-person-badge').textContent = active.name;
+      document.getElementById('doc-summary-person').textContent = `${active.name} (${active.relation}${active.age ? ', Age ' + active.age : ''})`;
+      document.getElementById('doc-summary-condition').textContent = active.condition || 'General Monitoring';
+
+      refreshDataViews();
+    }
+
+    const sheet = document.getElementById('log-bottom-sheet');
+    const backdrop = document.getElementById('sheet-backdrop');
+
+    function openBottomSheet() {
+      const now = new Date();
+      const local = (new Date(now.getTime() - now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+      document.getElementById('input-timestamp').value = local;
+
+      backdrop.classList.remove('backdrop-hidden');
+      backdrop.classList.add('backdrop-visible');
+      sheet.classList.remove('sheet-hidden');
+      sheet.classList.add('sheet-visible');
+    }
+
+    function closeBottomSheet() {
+      sheet.classList.remove('sheet-visible');
+      sheet.classList.add('sheet-hidden');
+      backdrop.classList.remove('backdrop-visible');
+      backdrop.classList.add('backdrop-hidden');
+    }
+
+    document.getElementById('btn-fab-open-log').addEventListener('click', openBottomSheet);
+    document.getElementById('btn-close-sheet').addEventListener('click', closeBottomSheet);
+    backdrop.addEventListener('click', closeBottomSheet);
+
+    // Modular Vitals Selector Pills
+    document.querySelectorAll('.vital-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const block = document.getElementById(targetId);
+        const isHidden = block.classList.contains('hidden');
+
+        if (isHidden) {
+          block.classList.remove('hidden');
+          btn.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+          btn.classList.add('bg-sky-600', 'text-white', 'border-sky-600', 'shadow-2xs');
+          btn.textContent = '✓ ' + btn.textContent.replace('+ ', '').replace('✓ ', '');
+        } else {
+          block.classList.add('hidden');
+          btn.classList.remove('bg-sky-600', 'text-white', 'border-sky-600', 'shadow-2xs');
+          btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
+          btn.textContent = '+ ' + btn.textContent.replace('✓ ', '').replace('+ ', '');
+        }
+      });
+    });
+
+    // BP Dual vs Single Toggle
+    document.getElementById('btn-bp-dual').addEventListener('click', () => {
+      isDualBP = true;
+      document.getElementById('box-bp-dual').classList.remove('hidden');
+      document.getElementById('box-bp-single').classList.add('hidden');
+      document.getElementById('btn-bp-dual').className = 'px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold';
+      document.getElementById('btn-bp-single').className = 'px-2 py-0.5 rounded-md text-slate-600 font-medium';
+    });
+
+    document.getElementById('btn-bp-single').addEventListener('click', () => {
+      isDualBP = false;
+      document.getElementById('box-bp-dual').classList.add('hidden');
+      document.getElementById('box-bp-single').classList.remove('hidden');
+      document.getElementById('btn-bp-single').className = 'px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold';
+      document.getElementById('btn-bp-dual').className = 'px-2 py-0.5 rounded-md text-slate-600 font-medium';
+    });
+
+    // Auto-average dual BP
+    const s1 = document.getElementById('sys-1');
+    const d1 = document.getElementById('dia-1');
+    const s2 = document.getElementById('sys-2');
+    const d2 = document.getElementById('dia-2');
+    const avgLabel = document.getElementById('bp-avg-display');
+
+    function computeBPAverage() {
+      const sys1 = parseFloat(s1.value);
+      const dia1 = parseFloat(d1.value);
+      const sys2 = parseFloat(s2.value);
+      const dia2 = parseFloat(d2.value);
+
+      if (!isNaN(sys1) && !isNaN(dia1) && !isNaN(sys2) && !isNaN(dia2)) {
+        const aS = Math.round((sys1 + sys2) / 2);
+        const aD = Math.round((dia1 + dia2) / 2);
+        avgLabel.textContent = `${aS} / ${aD} mmHg (Avg)`;
+      } else if (!isNaN(sys1) && !isNaN(dia1)) {
+        avgLabel.textContent = `${sys1} / ${dia1} mmHg (Reading 1)`;
+      } else {
+        avgLabel.textContent = '-- / -- mmHg';
+      }
+    }
+    [s1, d1, s2, d2].forEach(inp => inp.addEventListener('input', computeBPAverage));
+
+    // Temperature Unit Toggle
+    document.getElementById('unit-temp-f').addEventListener('click', () => {
+      tempUnit = 'F';
+      document.getElementById('unit-temp-f').className = 'text-sky-600 cursor-pointer underline font-black';
+      document.getElementById('unit-temp-c').className = 'text-slate-400 cursor-pointer';
+      document.getElementById('input-temp').placeholder = '98.6';
+    });
+    document.getElementById('unit-temp-c').addEventListener('click', () => {
+      tempUnit = 'C';
+      document.getElementById('unit-temp-c').className = 'text-sky-600 cursor-pointer underline font-black';
+      document.getElementById('unit-temp-f').className = 'text-slate-400 cursor-pointer';
+      document.getElementById('input-temp').placeholder = '37.0';
+    });
+
+    // Quick Context Tag Click
+    document.querySelectorAll('.chip-tag').forEach(b => {
+      b.addEventListener('click', () => {
+        const inp = document.getElementById('input-notes');
+        const txt = b.textContent.replace('+ ', '');
+        inp.value = inp.value ? `${inp.value}, ${txt}` : txt;
+      });
+    });
+
+    // Validated Save Handler
+    document.getElementById('btn-save-vitals').addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        let sys = null;
+        let dia = null;
+
+        const bpBlockActive = !document.getElementById('block-bp').classList.contains('hidden');
+        const glucoseBlockActive = !document.getElementById('block-glucose').classList.contains('hidden');
+        const weightBlockActive = !document.getElementById('block-weight').classList.contains('hidden');
+        const spo2BlockActive = !document.getElementById('block-spo2').classList.contains('hidden');
+        const tempBlockActive = !document.getElementById('block-temp').classList.contains('hidden');
+        const waistBlockActive = !document.getElementById('block-waist').classList.contains('hidden');
+
+        // BP evaluation
+        if (bpBlockActive) {
+          if (isDualBP) {
+            const vS1 = parseFloat(s1.value);
+            const vD1 = parseFloat(d1.value);
+            const vS2 = parseFloat(s2.value);
+            const vD2 = parseFloat(d2.value);
+
+            if ((!isNaN(vS1) && isNaN(vD1)) || (isNaN(vS1) && !isNaN(vD1))) {
+              showToast("Please enter both Systolic & Diastolic for Reading 1");
+              return;
+            }
+            if ((!isNaN(vS2) && isNaN(vD2)) || (isNaN(vS2) && !isNaN(vD2))) {
+              showToast("Please enter both Systolic & Diastolic for Reading 2");
+              return;
+            }
+
+            if (!isNaN(vS1) && !isNaN(vD1)) {
+              if (!isNaN(vS2) && !isNaN(vD2)) {
+                sys = Math.round((vS1 + vS2) / 2);
+                dia = Math.round((vD1 + vD2) / 2);
+              } else {
+                sys = Math.round(vS1);
+                dia = Math.round(vD1);
+              }
+            }
+          } else {
+            const s = parseFloat(document.getElementById('sys-single').value);
+            const d = parseFloat(document.getElementById('dia-single').value);
+            if ((!isNaN(s) && isNaN(d)) || (isNaN(s) && !isNaN(d))) {
+              showToast("Please enter both Systolic and Diastolic values");
+              return;
+            }
+            if (!isNaN(s) && !isNaN(d)) {
+              sys = Math.round(s);
+              dia = Math.round(d);
+            }
+          }
+        }
+
+        // Pulse
+        let pulse = null;
+        const bpPulse = parseInt(document.getElementById('input-pulse').value, 10);
+        const oxPulse = parseInt(document.getElementById('input-spo2-pulse').value, 10);
+        if (!isNaN(bpPulse) && bpPulse > 0) pulse = bpPulse;
+        else if (!isNaN(oxPulse) && oxPulse > 0) pulse = oxPulse;
+
+        // Glucose
+        let glucose = null;
+        let glucoseType = null;
+        if (glucoseBlockActive) {
+          const g = parseFloat(document.getElementById('input-glucose').value);
+          if (!isNaN(g) && g > 0) {
+            glucose = Math.round(g);
+            glucoseType = document.getElementById('input-glucose-type').value;
+          }
+        }
+
+        // Weight
+        let weight = null;
+        if (weightBlockActive) {
+          const w = parseFloat(document.getElementById('input-weight').value);
+          if (!isNaN(w) && w > 0) weight = parseFloat(w.toFixed(1));
+        }
+
+        // SpO2
+        let spo2 = null;
+        if (spo2BlockActive) {
+          const o = parseInt(document.getElementById('input-spo2').value, 10);
+          if (!isNaN(o) && o > 0) spo2 = o;
+        }
+
+        // Temp
+        let temp = null;
+        if (tempBlockActive) {
+          const t = parseFloat(document.getElementById('input-temp').value);
+          if (!isNaN(t) && t > 0) temp = parseFloat(t.toFixed(1));
+        }
+
+        // Waist
+        let waist = null;
+        if (waistBlockActive) {
+          const ws = parseFloat(document.getElementById('input-waist').value);
+          if (!isNaN(ws) && ws > 0) waist = parseFloat(ws.toFixed(1));
+        }
+
+        // Ensure at least one vital measurement was provided
+        const hasVitals = (sys !== null && dia !== null) || pulse !== null || glucose !== null || weight !== null || spo2 !== null || temp !== null || waist !== null;
+
+        if (!hasVitals) {
+          showToast("Please enter at least one measurement before saving.");
+          return;
+        }
+
+        let timestampInput = document.getElementById('input-timestamp').value;
+        let timestamp = timestampInput ? new Date(timestampInput).toISOString() : new Date().toISOString();
+        const medTiming = document.getElementById('input-med-timing').value;
+        const posture = document.getElementById('input-bp-posture').value;
+        const notes = document.getElementById('input-notes').value.trim();
+
+        const record = {
+          profileId: Number(activeProfileId),
+          timestamp,
+          systolic: sys,
+          diastolic: dia,
+          pulse,
+          glucose,
+          glucoseType,
+          weight,
+          spo2,
+          temp,
+          tempUnit: temp ? tempUnit : null,
+          waist,
+          medTiming,
+          posture: sys ? posture : null,
+          notes
+        };
+
+        await dbAddVital(record);
+        showToast("Vitals saved to device!");
+
+        // Reset inputs
+        s1.value = ''; d1.value = ''; s2.value = ''; d2.value = '';
+        document.getElementById('sys-single').value = '';
+        document.getElementById('dia-single').value = '';
+        document.getElementById('input-pulse').value = '';
+        document.getElementById('input-spo2-pulse').value = '';
+        document.getElementById('input-glucose').value = '';
+        document.getElementById('input-weight').value = '';
+        document.getElementById('input-spo2').value = '';
+        document.getElementById('input-temp').value = '';
+        document.getElementById('input-waist').value = '';
+        document.getElementById('input-notes').value = '';
+        avgLabel.textContent = '-- / -- mmHg';
+
+        closeBottomSheet();
+        await refreshDataViews();
+      } catch (err) {
+        console.error("Save error:", err);
+        showToast("Error saving: " + (err.message || "database issue"));
+      }
+    });
+  </script>
+
+  <script>
+    function renderSparklineSVG(points, options = {}) {
+      const {
+        width = 320,
+        height = 110,
+        stroke = '#0284c7',
+        fill = '#e0f2fe',
+        unit = '',
+        refLine = null,
+        refColor = '#10b981'
+      } = options;
+
+      if (!points || !points.length) return '';
+
+      const padX = 28;
+      const padY = 16;
+      const vals = points.map(p => p.val);
+      const minVal = Math.min(...vals, refLine !== null ? refLine - 2 : Infinity);
+      const maxVal = Math.max(...vals, refLine !== null ? refLine + 2 : -Infinity);
+      const range = Math.max(maxVal - minVal, 1);
+
+      const getX = (i) => points.length === 1 ? width / 2 : padX + (i * ((width - padX - 16) / (points.length - 1)));
+      const getY = (v) => height - padY - ((v - minVal) / range) * (height - 2 * padY);
+
+      const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${getX(i).toFixed(1)} ${getY(p.val).toFixed(1)}`).join(' ');
+      const areaD = points.length > 1
+        ? `${pathD} L ${getX(points.length - 1).toFixed(1)} ${height - padY} L ${getX(0).toFixed(1)} ${height - padY} Z`
+        : '';
+
+      const dots = points.map((p, i) => {
+        const cx = getX(i).toFixed(1);
+        const cy = getY(p.val).toFixed(1);
+        const showLabel = points.length <= 8 || i === 0 || i === points.length - 1;
+        return `
+          <circle cx="${cx}" cy="${cy}" r="3" fill="${stroke}" stroke="#ffffff" stroke-width="1.5" />
+          ${showLabel ? `<text x="${cx}" y="${cy - 5}" font-size="8.5" font-weight="800" text-anchor="middle" fill="${stroke}">${p.val}</text>` : ''}
+        `;
+      }).join('');
+
+      const refSvg = refLine !== null ? `
+        <line x1="${padX}" y1="${getY(refLine)}" x2="${width - 12}" y2="${getY(refLine)}" stroke="${refColor}" stroke-dasharray="3,3" stroke-width="1.2" opacity="0.8" />
+        <text x="${padX - 4}" y="${getY(refLine) + 3}" font-size="7.5" font-weight="700" fill="${refColor}" text-anchor="end">${refLine}</text>
+      ` : '';
+
+      const datesSvg = [0, points.length - 1].map(i => {
+        if (!points[i]) return '';
+        const dStr = new Date(points[i].date).toLocaleDateString([], { month: 'short', day: 'numeric' });
+        return `<text x="${getX(i).toFixed(1)}" y="${height - 2}" font-size="8" font-weight="600" fill="#94a3b8" text-anchor="middle">${dStr}</text>`;
+      }).join('');
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-28 overflow-visible">
+          ${refSvg}
+          ${areaD ? `<path d="${areaD}" fill="${fill}" opacity="0.4" />` : ''}
+          <path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+          ${dots}
+          ${datesSvg}
+        </svg>
+      `;
+    }
+
+    function renderTrends(records) {
+      const feed = document.getElementById('trends-feed');
+      if (!feed) return;
+
+      const chrono = [...records].reverse();
+      const cardsHtml = [];
+
+      // Helper for stats
+      const calcStats = (vals) => {
+        if (!vals.length) return null;
+        const min = Math.min(...vals);
+        const max = Math.max(...vals);
+        const avg = Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
+        return { min, max, avg, count: vals.length };
+      };
+
+      // Helper for empty card
+      const emptyCard = (name, icon, unit) => `
+        <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+              ${icon} ${name}
+            </span>
+            <span class="text-[10px] text-slate-400 font-semibold">${unit}</span>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-2xl text-center text-xs text-slate-400 border border-slate-100">
+            No ${name.toLowerCase()} entries logged yet. Tap <strong>+ Log Vitals</strong> to start.
+          </div>
+        </div>
+      `;
+
+      const bpList = chrono.filter(r => r.systolic && r.diastolic);
+      if (bpList.length > 0) {
+        const sysVals = bpList.map(r => r.systolic);
+        const diaVals = bpList.map(r => r.diastolic);
+        const sysStats = calcStats(sysVals);
+        const diaStats = calcStats(diaVals);
+        const latest = bpList[bpList.length - 1];
+
+        const width = 320;
+        const height = 130;
+        const padX = 30;
+        const padY = 18;
+        const minVal = Math.min(...diaVals, 70);
+        const maxVal = Math.max(...sysVals, 140);
+        const range = Math.max(maxVal - minVal, 1);
+
+        const getX = (i) => bpList.length === 1 ? width / 2 : padX + (i * ((width - padX - 16) / (bpList.length - 1)));
+        const getY = (v) => height - padY - ((v - minVal) / range) * (height - 2 * padY);
+
+        const sysPath = bpList.map((p, i) => `${i === 0 ? 'M' : 'L'} ${getX(i).toFixed(1)} ${getY(p.systolic).toFixed(1)}`).join(' ');
+        const diaPath = bpList.map((p, i) => `${i === 0 ? 'M' : 'L'} ${getX(i).toFixed(1)} ${getY(p.diastolic).toFixed(1)}`).join(' ');
+
+        const dots = bpList.map((p, i) => {
+          const cx = getX(i).toFixed(1);
+          const cyS = getY(p.systolic).toFixed(1);
+          const cyD = getY(p.diastolic).toFixed(1);
+          const show = bpList.length <= 8 || i === 0 || i === bpList.length - 1;
+          return `
+            <circle cx="${cx}" cy="${cyS}" r="3" fill="#0284c7" stroke="#ffffff" stroke-width="1.5" />
+            <circle cx="${cx}" cy="${cyD}" r="3" fill="#64748b" stroke="#ffffff" stroke-width="1.5" />
+            ${show ? `<text x="${cx}" y="${cyS - 5}" font-size="8" font-weight="800" text-anchor="middle" fill="#0369a1">${p.systolic}</text>` : ''}
+            ${show ? `<text x="${cx}" y="${Number(cyD) + 11}" font-size="8" font-weight="700" text-anchor="middle" fill="#475569">${p.diastolic}</text>` : ''}
+          `;
+        }).join('');
+
+        const datesSvg = [0, bpList.length - 1].map(i => {
+          if (!bpList[i]) return '';
+          const dStr = new Date(bpList[i].timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+          return `<text x="${getX(i).toFixed(1)}" y="${height - 2}" font-size="8" font-weight="600" fill="#94a3b8" text-anchor="middle">${dStr}</text>`;
+        }).join('');
+
+        cardsHtml.push(`
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-sky-600 inline-block"></span>
+                1. Blood Pressure (Sys & Dia)
+              </span>
+              <span class="font-black text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
+                Latest: ${latest.systolic}/${latest.diastolic} mmHg
+              </span>
+            </div>
+
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-2 relative overflow-hidden">
+              <svg viewBox="0 0 ${width} ${height}" class="w-full h-32 overflow-visible">
+                <line x1="${padX}" y1="${getY(120)}" x2="${width - 12}" y2="${getY(120)}" stroke="#10b981" stroke-dasharray="3,3" stroke-width="1" opacity="0.7" />
+                <line x1="${padX}" y1="${getY(80)}" x2="${width - 12}" y2="${getY(80)}" stroke="#10b981" stroke-dasharray="3,3" stroke-width="1" opacity="0.7" />
+                <path d="${sysPath}" fill="none" stroke="#0284c7" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="${diaPath}" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                ${dots}
+                ${datesSvg}
+              </svg>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+              <div class="p-2 bg-sky-50/60 border border-sky-100 rounded-xl">
+                <span class="text-[10px] font-extrabold text-sky-800 uppercase block">Average BP</span>
+                <span class="text-sm font-black text-slate-800">${Math.round(sysStats.avg)}/${Math.round(diaStats.avg)}</span>
+                <span class="text-[10px] text-slate-400 block">${bpList.length} total reading(s)</span>
+              </div>
+              <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl">
+                <span class="text-[10px] font-bold text-slate-500 uppercase block">Systolic Range</span>
+                <span class="text-sm font-black text-slate-800">${sysStats.min} - ${sysStats.max}</span>
+                <span class="text-[10px] text-slate-400 block">mmHg</span>
+              </div>
+            </div>
+          </div>
+        `);
+      } else {
+        cardsHtml.push(emptyCard('1. Blood Pressure', '<span class="w-2 h-2 rounded-full bg-sky-600 inline-block"></span>', 'mmHg'));
+      }
+
+      const pulseList = chrono.filter(r => r.pulse).map(r => ({ val: r.pulse, date: r.timestamp }));
+      if (pulseList.length > 0) {
+        const stats = calcStats(pulseList.map(p => p.val));
+        const svg = renderSparklineSVG(pulseList, { stroke: '#f43f5e', fill: '#ffe4e6', refLine: 72, refColor: '#10b981' });
+        cardsHtml.push(`
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-rose-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                2. Pulse / Heart Rate
+              </span>
+              <span class="font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                Latest: ${pulseList[pulseList.length - 1].val} bpm
+              </span>
+            </div>
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-2">${svg}</div>
+            <div class="flex items-center justify-between text-xs px-2 text-slate-600">
+              <span>Resting Pulse Average: <strong>${Math.round(stats.avg)} bpm</strong></span>
+              <span class="text-slate-400">Min: ${stats.min} • Max: ${stats.max}</span>
+            </div>
+          </div>
+        `);
+      } else {
+        cardsHtml.push(emptyCard('2. Pulse / Heart Rate', '<svg class="w-3.5 h-3.5 text-rose-500 inline" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>', 'bpm'));
+      }
+
+      const glucList = chrono.filter(r => r.glucose).map(r => ({ val: r.glucose, date: r.timestamp, type: r.glucoseType }));
+      if (glucList.length > 0) {
+        const stats = calcStats(glucList.map(p => p.val));
+        const svg = renderSparklineSVG(glucList, { stroke: '#0d9488', fill: '#ccfbf1', refLine: 100, refColor: '#10b981' });
+        cardsHtml.push(`
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                3. Blood Glucose (Sugar)
+              </span>
+              <span class="font-black text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                Latest: ${glucList[glucList.length - 1].val} mg/dL
+              </span>
+            </div>
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-2">${svg}</div>
+            <div class="flex items-center justify-between text-xs px-2 text-slate-600">
+              <span>Overall Average: <strong>${Math.round(stats.avg)} mg/dL</strong></span>
+              <span class="text-slate-400">Target Fasting &lt; 100</span>
+            </div>
+          </div>
+        `);
+      } else {
+        cardsHtml.push(emptyCard('3. Blood Glucose', '<svg class="w-3.5 h-3.5 text-teal-600 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>', 'mg/dL'));
+      }
+
+      const weightList = chrono.filter(r => r.weight).map(r => ({ val: r.weight, date: r.timestamp }));
+      if (weightList.length > 0) {
+        const stats = calcStats(weightList.map(p => p.val));
+        const delta = Math.round((weightList[weightList.length - 1].val - weightList[0].val) * 10) / 10;
+        const svg = renderSparklineSVG(weightList, { stroke: '#6366f1', fill: '#e0e7ff' });
+        cardsHtml.push(`
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                4. Body Weight
+              </span>
+              <span class="font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
+                Latest: ${weightList[weightList.length - 1].val} kg (${delta >= 0 ? '+' : ''}${delta}kg)
+              </span>
+            </div>
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-2">${svg}</div>
+            <div class="flex items-center justify-between text-xs px-2 text-slate-600">
+              <span>Mean: <strong>${stats.avg} kg</strong></span>
+              <span class="text-slate-400">Min: ${stats.min} • Max: ${stats.max} kg</span>
+            </div>
+          </div>
+        `);
+      } else {
+        cardsHtml.push(emptyCard('4. Body Weight', '<svg class="w-3.5 h-3.5 text-indigo-600 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>', 'kg'));
+      }
+
+      const waistList = chrono.filter(r => r.waist).map(r => ({ val: r.waist, date: r.timestamp }));
+      if (waistList.length > 0) {
+        const stats = calcStats(waistList.map(p => p.val));
+        const svg = renderSparklineSVG(waistList, { stroke: '#8b5cf6', fill: '#ede9fe', refLine: 90, refColor: '#f59e0b' });
+        cardsHtml.push(`
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+                5. Waist Circumference
+              </span>
+              <span class="font-black text-violet-700 bg-violet-50 px-2 py-0.5 rounded-md border border-violet-200">
+                Latest: ${waistList[waistList.length - 1].val} cm
+              </span>
+            </div>
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-2">${svg}</div>
+            <div class="flex items-center justify-between text-xs px-2 text-slate-600">
+              <span>Mean: <strong>${stats.avg} cm</strong></span>
+              <span class="text-slate-400">Target &lt; 90 cm</span>
+            </div>
+          </div>
+        `);
+      } else {
+        cardsHtml.push(emptyCard('5. Waist Circumference', '<svg class="w-3.5 h-3.5 text-violet-600 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>', 'cm'));
+      }
+
+      const spo2List = chrono.filter(r => r.spo2).map(r => ({ val: r.spo2, date: r.timestamp }));
+      if (spo2List.length > 0) {
+        const stats = calcStats(spo2List.map(p => p.val));
+        const svg = renderSparklineSVG(spo2List, { stroke: '#059669', fill: '#d1fae5', refLine: 95, refColor: '#10b981' });
+        cardsHtml.push(`
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px] flex items-center justify-center">%</span>
+                6. SpO2 Blood Oxygen
+              </span>
+              <span class="font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Latest: ${spo2List[spo2List.length - 1].val}%
+              </span>
+            </div>
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-2">${svg}</div>
+            <div class="flex items-center justify-between text-xs px-2 text-slate-600">
+              <span>Average Saturation: <strong>${Math.round(stats.avg)}%</strong></span>
+              <span class="text-slate-400">Target &ge; 95%</span>
+            </div>
+          </div>
+        `);
+      } else {
+        cardsHtml.push(emptyCard('6. SpO2 Blood Oxygen', '<span class="w-4 h-4 rounded bg-emerald-100 text-emerald-700 font-bold text-[10px] inline-flex items-center justify-center">%</span>', '%'));
+      }
+
+      const tempList = chrono.filter(r => r.temp).map(r => ({ val: r.temp, date: r.timestamp, unit: r.tempUnit || 'F' }));
+      if (tempList.length > 0) {
+        const stats = calcStats(tempList.map(p => p.val));
+        const svg = renderSparklineSVG(tempList, { stroke: '#f59e0b', fill: '#fef3c7', refLine: 99.0, refColor: '#ef4444' });
+        cardsHtml.push(`
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+                7. Body Temperature
+              </span>
+              <span class="font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                Latest: ${tempList[tempList.length - 1].val}°${tempList[tempList.length - 1].unit}
+              </span>
+            </div>
+            <div class="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-2">${svg}</div>
+            <div class="flex items-center justify-between text-xs px-2 text-slate-600">
+              <span>Mean: <strong>${stats.avg}°</strong></span>
+              <span class="text-slate-400">${tempList.length} check(s) recorded</span>
+            </div>
+          </div>
+        `);
+      } else {
+        cardsHtml.push(emptyCard('7. Body Temperature', '<svg class="w-3.5 h-3.5 text-amber-500 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>', '°F / °C'));
+      }
+
+      feed.innerHTML = cardsHtml.join('');
+    }
+  </script>
+
+  <script>
+    function renderDoctorSummary(records) {
+      const now = Date.now();
+      const sevenDaysAgo = new Date(now - (7 * 24 * 60 * 60 * 1000));
+      const thirtyDaysAgo = new Date(now - (30 * 24 * 60 * 60 * 1000));
+
+      const bpRecords30d = records.filter(r => r.systolic && r.diastolic && new Date(r.timestamp) >= thirtyDaysAgo);
+      const bpRecords7d = bpRecords30d.filter(r => new Date(r.timestamp) >= sevenDaysAgo);
+
+      // Morning (4-11:59) vs evening (17-23:59)
+      const computeAmPm = (recs) => {
+        const ams = recs.filter(r => {
+          const h = new Date(r.timestamp).getHours();
+          return h >= 4 && h < 12;
+        });
+        const pms = recs.filter(r => {
+          const h = new Date(r.timestamp).getHours();
+          return h >= 17 && h <= 23;
+        });
+        return { ams, pms };
+      };
+
+      // 1. Calculate 7-Day BP Window
+      if (bpRecords7d.length > 0) {
+        const oSys = Math.round(bpRecords7d.reduce((a, b) => a + b.systolic, 0) / bpRecords7d.length);
+        const oDia = Math.round(bpRecords7d.reduce((a, b) => a + b.diastolic, 0) / bpRecords7d.length);
+        document.getElementById('doc-7d-overall').textContent = `Overall: ${oSys}/${oDia} (${bpRecords7d.length} tests)`;
+      } else {
+        document.getElementById('doc-7d-overall').textContent = 'Overall: --/--';
+      }
+
+      const bp7 = computeAmPm(bpRecords7d);
+      if (bp7.ams.length > 0) {
+        const s = Math.round(bp7.ams.reduce((a, b) => a + b.systolic, 0) / bp7.ams.length);
+        const d = Math.round(bp7.ams.reduce((a, b) => a + b.diastolic, 0) / bp7.ams.length);
+        document.getElementById('doc-7d-am-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-7d-am-sub').textContent = `${bp7.ams.length} AM checks`;
+      } else {
+        document.getElementById('doc-7d-am-avg').textContent = '--/--';
+        document.getElementById('doc-7d-am-sub').textContent = '0 AM checks';
+      }
+
+      if (bp7.pms.length > 0) {
+        const s = Math.round(bp7.pms.reduce((a, b) => a + b.systolic, 0) / bp7.pms.length);
+        const d = Math.round(bp7.pms.reduce((a, b) => a + b.diastolic, 0) / bp7.pms.length);
+        document.getElementById('doc-7d-pm-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-7d-pm-sub').textContent = `${bp7.pms.length} PM checks`;
+      } else {
+        document.getElementById('doc-7d-pm-avg').textContent = '--/--';
+        document.getElementById('doc-7d-pm-sub').textContent = '0 PM checks';
+      }
+
+      // 2. Calculate 30-Day BP Window
+      if (bpRecords30d.length > 0) {
+        const oSys30 = Math.round(bpRecords30d.reduce((a, b) => a + b.systolic, 0) / bpRecords30d.length);
+        const oDia30 = Math.round(bpRecords30d.reduce((a, b) => a + b.diastolic, 0) / bpRecords30d.length);
+        document.getElementById('doc-30d-overall').textContent = `Overall: ${oSys30}/${oDia30} (${bpRecords30d.length} tests)`;
+      } else {
+        document.getElementById('doc-30d-overall').textContent = 'Overall: --/--';
+      }
+
+      const bp30 = computeAmPm(bpRecords30d);
+      if (bp30.ams.length > 0) {
+        const s = Math.round(bp30.ams.reduce((a, b) => a + b.systolic, 0) / bp30.ams.length);
+        const d = Math.round(bp30.ams.reduce((a, b) => a + b.diastolic, 0) / bp30.ams.length);
+        document.getElementById('doc-am-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-am-sub').textContent = `${bp30.ams.length} AM checks`;
+      } else {
+        document.getElementById('doc-am-avg').textContent = '--/--';
+        document.getElementById('doc-am-sub').textContent = '0 AM checks';
+      }
+
+      if (bp30.pms.length > 0) {
+        const s = Math.round(bp30.pms.reduce((a, b) => a + b.systolic, 0) / bp30.pms.length);
+        const d = Math.round(bp30.pms.reduce((a, b) => a + b.diastolic, 0) / bp30.pms.length);
+        document.getElementById('doc-pm-avg').textContent = `${s}/${d}`;
+        document.getElementById('doc-pm-sub').textContent = `${bp30.pms.length} PM checks`;
+      } else {
+        document.getElementById('doc-pm-avg').textContent = '--/--';
+        document.getElementById('doc-pm-sub').textContent = '0 PM checks';
+      }
+
+      const outliers = bpRecords30d.filter(r => r.systolic >= 135 || r.diastolic >= 85).length;
+      document.getElementById('doc-outlier-badge').textContent = outliers;
+
+      // 3. Dedicated Glucose Tile: 7-Day & 30-Day Fasting vs Post-Meal
+      const gluc30d = records.filter(r => r.glucose && new Date(r.timestamp) >= thirtyDaysAgo);
+      const gluc7d = gluc30d.filter(r => new Date(r.timestamp) >= sevenDaysAgo);
+
+      const isFast = (r) => r.glucoseType === 'Fasting' || (r.medTiming && r.medTiming.includes('Fasting'));
+      const isPP = (r) => r.glucoseType === 'Post-Prandial' || r.glucoseType === 'Random' || (r.medTiming && r.medTiming.includes('Post'));
+
+      const fast7 = gluc7d.filter(isFast);
+      const pp7 = gluc7d.filter(isPP);
+      const fast30 = gluc30d.filter(isFast);
+      const pp30 = gluc30d.filter(isPP);
+
+      // 7D Fasting
+      if (fast7.length > 0) {
+        const avg = Math.round(fast7.reduce((acc, r) => acc + r.glucose, 0) / fast7.length);
+        document.getElementById('doc-g-7d-fast').textContent = `${avg}`;
+        document.getElementById('doc-g-7d-fast-sub').textContent = `${fast7.length} test(s)`;
+      } else {
+        document.getElementById('doc-g-7d-fast').textContent = '--';
+        document.getElementById('doc-g-7d-fast-sub').textContent = '0 tests';
+      }
+
+      // 7D Post-Meal
+      if (pp7.length > 0) {
+        const avg = Math.round(pp7.reduce((acc, r) => acc + r.glucose, 0) / pp7.length);
+        document.getElementById('doc-g-7d-pp').textContent = `${avg}`;
+        document.getElementById('doc-g-7d-pp-sub').textContent = `${pp7.length} test(s)`;
+      } else {
+        document.getElementById('doc-g-7d-pp').textContent = '--';
+        document.getElementById('doc-g-7d-pp-sub').textContent = '0 tests';
+      }
+
+      // 30D Fasting
+      if (fast30.length > 0) {
+        const avg = Math.round(fast30.reduce((acc, r) => acc + r.glucose, 0) / fast30.length);
+        document.getElementById('doc-g-30d-fast').textContent = `${avg}`;
+        document.getElementById('doc-g-30d-fast-sub').textContent = `${fast30.length} test(s)`;
+      } else {
+        document.getElementById('doc-g-30d-fast').textContent = '--';
+        document.getElementById('doc-g-30d-fast-sub').textContent = '0 tests';
+      }
+
+      // 30D Post-Meal
+      if (pp30.length > 0) {
+        const avg = Math.round(pp30.reduce((acc, r) => acc + r.glucose, 0) / pp30.length);
+        document.getElementById('doc-g-30d-pp').textContent = `${avg}`;
+        document.getElementById('doc-g-30d-pp-sub').textContent = `${pp30.length} test(s)`;
+      } else {
+        document.getElementById('doc-g-30d-pp').textContent = '--';
+        document.getElementById('doc-g-30d-pp-sub').textContent = '0 tests';
+      }
+
+      // 4. Compact Single-Line Recent Records Feed
+      const recentFeed = document.getElementById('doc-recent-feed');
+      if (!records.length) {
+        recentFeed.innerHTML = '<span class="text-xs text-slate-400 py-3 block text-center">No logs recorded yet</span>';
+        return;
+      }
+
+      recentFeed.innerHTML = records.slice(0, 8).map(r => {
+        const dt = new Date(r.timestamp);
+        const dateStr = dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+        const parts = [];
+        if (r.systolic && r.diastolic) parts.push(`<strong>${r.systolic}/${r.diastolic}</strong> <span class="text-[10px] text-slate-400">mmHg</span>`);
+        if (r.pulse) parts.push(`♥ ${r.pulse}`);
+        if (r.glucose) parts.push(`🍬 ${r.glucose} <span class="text-[10px] text-slate-400">(${r.glucoseType ? r.glucoseType[0] : 'G'})</span>`);
+        if (r.weight) parts.push(`⚖ ${r.weight}kg`);
+        if (r.spo2) parts.push(`% ${r.spo2}`);
+        if (r.temp) parts.push(`🌡 ${r.temp}°`);
+
+        const lineVitals = parts.length ? parts.join(' • ') : 'Measurement check';
+        const contextStr = r.medTiming ? r.medTiming.replace('Before Telmikind / Meds', 'AM Meds').replace('Post Meds', 'PM Meds') : '';
+
+        return `
+          <div class="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+            <div class="flex items-center gap-1.5 truncate">
+              <span class="text-slate-400 font-semibold text-[11px] shrink-0">${dateStr}</span>
+              <span class="truncate text-slate-800">${lineVitals}</span>
+            </div>
+            <span class="text-[10px] text-slate-500 font-medium shrink-0 ml-2">${contextStr}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+
+  <script>
+    function renderDashboard(records) {
+      if (!records.length) {
+        document.getElementById('dash-bp-main').textContent = '--/--';
+        document.getElementById('dash-bp-pill').textContent = 'Awaiting Log';
+        document.getElementById('dash-bp-pill').className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700';
+        document.getElementById('dash-pulse-pill').textContent = '-- bpm';
+        document.getElementById('dash-latest-time').textContent = 'No readings yet';
+        document.getElementById('dash-am-val').textContent = '--/--';
+        document.getElementById('dash-am-count').textContent = '0 logs before meds';
+        document.getElementById('dash-pm-val').textContent = '--/--';
+        document.getElementById('dash-pm-count').textContent = '0 evening logs';
+        document.getElementById('dash-weight-val').textContent = '-- kg';
+        document.getElementById('dash-waist-val').textContent = 'Waist: -- cm';
+        document.getElementById('dash-glucose-val').textContent = '-- mg/dL';
+        document.getElementById('dash-glucose-ctx').textContent = 'No checks';
+        document.getElementById('dash-spo2-val').textContent = '-- %';
+        document.getElementById('dash-temp-val').textContent = '-- °F';
+        return;
+      }
+
+      // Latest BP
+      const latestBP = records.find(r => r.systolic && r.diastolic);
+      if (latestBP) {
+        document.getElementById('dash-bp-main').textContent = `${latestBP.systolic}/${latestBP.diastolic}`;
+        const dt = new Date(latestBP.timestamp);
+        document.getElementById('dash-latest-time').textContent = dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Pill badge
+        const s = latestBP.systolic;
+        const d = latestBP.diastolic;
+        let badge = 'Normal (<120/80)';
+        let pillClass = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        if (s >= 140 || d >= 90) {
+          badge = 'Stage 2 HTN';
+          pillClass = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30';
+        } else if (s >= 130 || d >= 80) {
+          badge = 'Stage 1 HTN';
+          pillClass = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        } else if (s >= 120 && d < 80) {
+          badge = 'Elevated';
+          pillClass = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30';
+        }
+        const pill = document.getElementById('dash-bp-pill');
+        pill.textContent = badge;
+        pill.className = pillClass;
+
+        if (latestBP.pulse) {
+          document.getElementById('dash-pulse-pill').innerHTML = `
+            <svg class="w-3.5 h-3.5 text-rose-400 inline" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            ${latestBP.pulse} bpm
+          `;
+        }
+      }
+
+      // 7-Day AM & PM averages
+      const sevenDaysAgo = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));
+      const bp7 = records.filter(r => r.systolic && r.diastolic && new Date(r.timestamp) >= sevenDaysAgo);
+      const ams = bp7.filter(r => {
+        const h = new Date(r.timestamp).getHours();
+        return h >= 4 && h < 12;
+      });
+      const pms = bp7.filter(r => {
+        const h = new Date(r.timestamp).getHours();
+        return h >= 17 && h <= 23;
+      });
+
+      if (ams.length > 0) {
+        const aS = Math.round(ams.reduce((a, b) => a + b.systolic, 0) / ams.length);
+        const aD = Math.round(ams.reduce((a, b) => a + b.diastolic, 0) / ams.length);
+        document.getElementById('dash-am-val').textContent = `${aS}/${aD}`;
+        document.getElementById('dash-am-count').textContent = `${ams.length} logs before meds`;
+      } else {
+        document.getElementById('dash-am-val').textContent = '--/--';
+        document.getElementById('dash-am-count').textContent = '0 logs before meds';
+      }
+
+      if (pms.length > 0) {
+        const pS = Math.round(pms.reduce((a, b) => a + b.systolic, 0) / pms.length);
+        const pD = Math.round(pms.reduce((a, b) => a + b.diastolic, 0) / pms.length);
+        document.getElementById('dash-pm-val').textContent = `${pS}/${pD}`;
+        document.getElementById('dash-pm-count').textContent = `${pms.length} evening logs`;
+      } else {
+        document.getElementById('dash-pm-val').textContent = '--/--';
+        document.getElementById('dash-pm-count').textContent = '0 evening logs';
+      }
+
+      // Other Latest Vitals
+      const latestW = records.find(r => r.weight);
+      if (latestW) document.getElementById('dash-weight-val').textContent = `${latestW.weight} kg`;
+      const latestWaist = records.find(r => r.waist);
+      if (latestWaist) document.getElementById('dash-waist-val').textContent = `Waist: ${latestWaist.waist} cm`;
+
+      const latestG = records.find(r => r.glucose);
+      if (latestG) {
+        document.getElementById('dash-glucose-val').textContent = `${latestG.glucose} mg/dL`;
+        document.getElementById('dash-glucose-ctx').textContent = latestG.glucoseType || 'Checked';
+      }
+
+      const latestOx = records.find(r => r.spo2);
+      if (latestOx) document.getElementById('dash-spo2-val').textContent = `${latestOx.spo2} %`;
+
+      const latestT = records.find(r => r.temp);
+      if (latestT) document.getElementById('dash-temp-val').textContent = `${latestT.temp} °${latestT.tempUnit || 'F'}`;
+    }
+
+    function renderHistory(records) {
+      const feed = document.getElementById('history-feed');
+      let filtered = records;
+      if (currentHistoryFilter === 'bp') filtered = records.filter(r => r.systolic && r.diastolic);
+      if (currentHistoryFilter === 'glucose') filtered = records.filter(r => r.glucose);
+
+      if (!filtered.length) {
+        feed.innerHTML = '<div class="p-6 text-center text-xs text-slate-400 bg-white rounded-2xl border border-slate-200">No records found. Tap "+ Log Vitals" to add your first reading!</div>';
+        return;
+      }
+
+      feed.innerHTML = filtered.map(r => {
+        const dt = new Date(r.timestamp);
+        const dateStr = dt.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        const badges = [];
+        if (r.systolic && r.diastolic) badges.push(`<span class="px-2 py-0.5 rounded-md bg-sky-50 text-sky-800 font-black text-xs border border-sky-200">${r.systolic}/${r.diastolic} mmHg</span>`);
+        if (r.pulse) badges.push(`<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-bold text-xs border border-rose-200">♥ ${r.pulse}</span>`);
+        if (r.glucose) badges.push(`<span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-black text-xs border border-amber-200">🍬 ${r.glucose} mg/dL (${r.glucoseType || 'G'})</span>`);
+        if (r.weight) badges.push(`<span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-200">⚖ ${r.weight} kg</span>`);
+        if (r.spo2) badges.push(`<span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 font-bold text-xs border border-teal-200">% ${r.spo2}</span>`);
+        if (r.temp) badges.push(`<span class="px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 font-bold text-xs border border-orange-200">🌡 ${r.temp}°${r.tempUnit || 'F'}</span>`);
+
+        return `
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-extrabold text-slate-800">${dateStr} • ${timeStr}</span>
+              <button onclick="handleDeleteVital(${r.id})" class="text-slate-400 hover:text-rose-600 transition p-1">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${badges.join('')}
+            </div>
+            ${r.medTiming || r.notes ? `
+              <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                <span>${r.medTiming || ''}</span>
+                <span class="truncate ml-2 italic text-slate-400">${r.notes || ''}</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleDeleteVital(id) {
+      await dbDeleteVital(id);
+      showToast("Entry removed.");
+      await refreshDataViews();
+    }
+
+    // History filter buttons
+    document.querySelectorAll('.hist-pill-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.hist-pill-btn').forEach(b => {
+          b.className = 'hist-pill-btn px-2.5 py-1 rounded-lg text-slate-600';
+        });
+        e.target.className = 'hist-pill-btn px-2.5 py-1 rounded-lg bg-white shadow-2xs text-sky-700 font-bold';
+        currentHistoryFilter = e.target.getAttribute('data-filter');
+        dbGetVitals(activeProfileId).then(renderHistory);
+      });
+    });
+
+    async function refreshDataViews() {
+      const records = await dbGetVitals(activeProfileId);
+      renderDashboard(records);
+      renderTrends(records);
+      renderHistory(records);
+      renderDoctorSummary(records);
+    }
+  </script>
+
+  <script>
+    const tabs = ['tab-home', 'tab-trends', 'tab-history', 'tab-doctor'];
+
+    function switchTab(targetId) {
+      tabs.forEach(t => document.getElementById(t).classList.add('hidden'));
+      document.getElementById(targetId).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-tab') === targetId) {
+          btn.className = 'nav-tab-btn flex flex-col items-center gap-1 py-1 text-sky-600 font-extrabold';
+        } else {
+          btn.className = 'nav-tab-btn flex flex-col items-center gap-1 py-1 text-slate-400 font-medium';
+        }
+      });
+
+      refreshDataViews();
+    }
+
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchTab(btn.getAttribute('data-tab'));
+      });
+    });
+
+    document.getElementById('btn-quick-doctor').addEventListener('click', () => {
+      switchTab('tab-doctor');
+    });
+
+    // CSV Export
+    document.getElementById('btn-export-csv').addEventListener('click', async () => {
+      const records = await dbGetVitals(activeProfileId);
+      if (!records.length) {
+        showToast("No records to export.");
+        return;
+      }
+
+      const active = profiles.find(p => p.id === activeProfileId) || { name: 'Member' };
+      let csv = "Person,Date,Time,Systolic,Diastolic,Pulse,Glucose(mg/dL),Glucose Context,Weight(kg),SpO2(%),Temp,Temp Unit,Waist(cm),Medication Context,Notes\r\n";
+
+      records.forEach(r => {
+        const d = new Date(r.timestamp);
+        const date = d.toISOString().split('T')[0];
+        const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        csv += `"${active.name}","${date}","${time}",${r.systolic || ''},${r.diastolic || ''},${r.pulse || ''},${r.glucose || ''},"${r.glucoseType || ''}",${r.weight || ''},${r.spo2 || ''},${r.temp || ''},"${r.tempUnit || ''}",${r.waist || ''},"${r.medTiming || ''}","${(r.notes || '').replace(/"/g, '""')}"\r\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Vitals_${active.name}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast("CSV downloaded to your device.");
+    });
+
+    // JSON Backup
+    document.getElementById('btn-backup-json').addEventListener('click', async () => {
+      const allVitals = await dbGetVitals(null);
+      const allProfiles = await dbGetProfiles();
+
+      const backup = {
+        app: "VitalsTrack Mobile",
+        date: new Date().toISOString(),
+        profiles: allProfiles,
+        vitals: allVitals
+      };
+
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `VitalsTrack_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast("JSON backup saved.");
+    });
+
+    // JSON Restore
+    document.getElementById('input-restore-json').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data.vitals && Array.isArray(data.vitals)) {
+            const db = await initDB();
+            const tx = db.transaction([STORE_PROFILES, STORE_VITALS], 'readwrite');
+            if (data.profiles) data.profiles.forEach(p => tx.objectStore(STORE_PROFILES).put(p));
+            data.vitals.forEach(v => tx.objectStore(STORE_VITALS).put(v));
+            tx.oncomplete = () => {
+              showToast("Data restored successfully!");
+              loadWelcomeProfiles();
+              applyActiveProfile();
+            };
+          } else {
+            showToast("Invalid backup format.");
+          }
+        } catch (err) {
+          showToast("Error reading file.");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // App Initialization
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadWelcomeProfiles();
+      const cachedProfId = localStorage.getItem('vitals_active_profile');
+      if (cachedProfId && profiles.some(p => p.id === Number(cachedProfId))) {
+        selectProfileFromWelcome(Number(cachedProfId));
+      } else {
+        document.getElementById('screen-welcome').classList.remove('hidden');
+      }
+    });
+
+    // Service Worker for Standalone Offline Execution
+    if ('serviceWorker' in navigator) {
+      const swText = `
+        self.addEventListener('install', e => self.skipWaiting());
+        self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+        self.addEventListener('fetch', e => {
+          e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./'))));
+        });
+      `;
+      const blob = new Blob([swText], { type: 'text/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+  </script>
+</body>
+</html>
