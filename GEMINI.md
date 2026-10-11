@@ -39,11 +39,19 @@ The primary clinical focus is **hypertension and metabolic monitoring**, featuri
     4. **Bottom Slide-Over Quick-Entry Drawer:** Seamless bottom sheet for rapid data entry with context-sensitive inputs (`medTiming` strictly filtered to BP & Glucose).
     5. **Multi-Range Trends View:** Deep-dive tabs (7d, 14d, 30d, 90d, All) featuring clinical reference bands (Normal, Elevated, Stage 1/2) shaded behind trend charts.
     6. **Physician Consultation Sheet:** High-contrast, tabular clinical summary ready for A4/Letter print or PDF export.
-- **Continuous App Versioning Protocol:**
+- **Continuous App Versioning & Rollback Protocol:**
   - The active app version must always be displayed visibly at the bottom of the page (footer).
   - Before applying changes, determine whether an update is a **Minor** or **Major** version upgrade:
     - **Minor Update:** Antigravity auto-increments the decimal version (e.g., `v5.1` → `v5.2`).
     - **Major Update:** The user must be asked to confirm or provide the new major version number (e.g., `v6.0`).
+  - **Fail-Safe Multi-Tier Rollback Guarantee (Both Major & Minor):**
+    1. **Pre-Release File Snapshots:** Before any modifications are applied, the current working version is archived to `archive/v<version>/vitals_tracker_light_pwa_v<version>.html`. If an update causes an issue, the user can immediately open or restore the archived file directly.
+    2. **Git Tagging & Branch Recovery:** Every released version is committed and tagged with `git tag -a "v<version>"`. To roll back, run:
+       ```bash
+       git checkout tags/v<previous_version> -- vitals_tracker_light_pwa.html
+       ```
+    3. **IndexedDB Invariance & Additive Migrations:** All database upgrades must be strictly non-destructive and backward-compatible. Adding new stores (e.g., `medications`, `medication_intakes`) must never drop or alter legacy stores (`profiles`, `vitals`). If the UI is rolled back to an earlier release, the older version continues functioning seamlessly without data loss.
+    4. **Data Backup Snapshots:** The user can export and restore full JSON backups at any time through the built-in backup utility.
 
 ---
 
